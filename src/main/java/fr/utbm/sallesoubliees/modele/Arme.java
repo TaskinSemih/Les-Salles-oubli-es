@@ -13,8 +13,8 @@ public enum Arme {
     private final int bonus;
     /** Associe un nom et un bonus constants. */
     Arme(String nom, int bonus) { this.nom = nom; this.bonus = bonus; }
-    /** @return bonus ajouté une seule fois à l'attaque */
+    /** {@return bonus ajouté une seule fois à l'attaque} */
     public int getBonus() { return bonus; }
-    /** @return nom et bonus lisibles */
+    /** {@return nom et bonus lisibles} */
     @Override public String toString() { return nom + " (+" + bonus + ")"; }
 }

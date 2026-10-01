@@ -11,15 +11,15 @@ public abstract class Ennemi extends Personnage {
      * @param armure armure permanente
      */
     protected Ennemi(String nom, int vie, int attaque, int armure) { super(nom, vie, attaque, armure); }
-    /** @return nombre de réponses ennemies déjà effectuées */
+    /** {@return nombre de réponses ennemies déjà effectuées} */
     public final int getTours() { return tours; }
-    /** @return identifiant stable du type d'ennemi */
+    /** {@return identifiant stable du type d'ennemi} */
     public abstract String getType();
-    /** @return puissance du prochain coup, ou zéro pour une préparation */
+    /** {@return puissance du prochain coup, ou zéro pour une préparation} */
     public abstract int puissanceProchaineAttaque();
-    /** @return intention lisible avant le choix du joueur */
+    /** {@return intention lisible avant le choix du joueur} */
     public abstract String getIntention();
-    /** @return vrai si l'attaque traverse l'armure permanente */
+    /** {@return vrai si l'attaque traverse l'armure permanente} */
     public boolean ignoreArmure() { return false; }
     /** Comptabilise une réponse après son exécution. */
     final void terminerTour() { tours++; }

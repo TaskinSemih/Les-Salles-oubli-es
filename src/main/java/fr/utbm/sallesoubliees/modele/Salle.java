@@ -22,27 +22,27 @@ public final class Salle {
         this.id = id; this.nom = nom; this.colonne = colonne; this.ligne = ligne;
         this.ennemi = ennemi; this.coffre = coffre; this.repos = repos;
     }
-    /** @return identifiant de sauvegarde */
+    /** {@return identifiant de sauvegarde} */
     public String getId() { return id; }
-    /** @return nom français */
+    /** {@return nom français} */
     public String getNom() { return nom; }
-    /** @return colonne dans la carte */
+    /** {@return colonne dans la carte} */
     public int getColonne() { return colonne; }
-    /** @return ligne dans la carte */
+    /** {@return ligne dans la carte} */
     public int getLigne() { return ligne; }
-    /** @return adversaire, ou null pour une salle paisible */
+    /** {@return adversaire, ou null pour une salle paisible} */
     public Ennemi getEnnemi() { return ennemi; }
-    /** @return arme du coffre, ou null sans coffre */
+    /** {@return arme du coffre, ou null sans coffre} */
     public Arme getCoffre() { return coffre; }
-    /** @return vrai pour le sanctuaire */
+    /** {@return vrai pour le sanctuaire} */
     public boolean estRepos() { return repos; }
-    /** @return vrai après la première entrée */
+    /** {@return vrai après la première entrée} */
     public boolean estVisitee() { return visitee; }
-    /** @return vrai après ouverture du coffre ou utilisation du repos */
+    /** {@return vrai après ouverture du coffre ou utilisation du repos} */
     public boolean estUtilisee() { return utilisee; }
-    /** @return passages non modifiables */
+    /** {@return passages non modifiables} */
     public Set<String> getPassages() { return Collections.unmodifiableSet(passages); }
-    /** @return présence d'un ennemi vivant */
+    /** {@return présence d'un ennemi vivant} */
     public boolean estHostile() { return ennemi != null && !ennemi.estMort(); }
     /** Ajoute une arête lors de la création du donjon. */
     void relier(String destination) { passages.add(destination); }

@@ -12,11 +12,11 @@ public final class Inventaire {
 
     /** Initialise l'équipement de départ et trois potions. */
     Inventaire() { }
-    /** @return vue non modifiable des armes possédées */
+    /** {@return vue non modifiable des armes possédées} */
     public Set<Arme> getArmes() { return Collections.unmodifiableSet(armes); }
-    /** @return nombre de potions restantes */
+    /** {@return nombre de potions restantes} */
     public int getPotions() { return potions; }
-    /** @return arme actuellement équipée */
+    /** {@return arme actuellement équipée} */
     public Arme getEquipee() { return equipee; }
     /** Ajoute une arme, sans doublon. */
     void ajouterArme(Arme arme) { armes.add(java.util.Objects.requireNonNull(arme)); }

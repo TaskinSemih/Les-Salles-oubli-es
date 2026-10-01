@@ -16,23 +16,23 @@ public final class Partie {
     Partie(Heros heros, Donjon donjon, String salle, EtatPartie etat) {
         this.heros = heros; this.donjon = donjon; this.salleActuelle = donjon.getSalle(salle); this.etat = etat;
     }
-    /** @return héros consultable */
+    /** {@return héros consultable} */
     public Heros getHeros() { return heros; }
-    /** @return donjon consultable */
+    /** {@return donjon consultable} */
     public Donjon getDonjon() { return donjon; }
-    /** @return salle occupée */
+    /** {@return salle occupée} */
     public Salle getSalleActuelle() { return salleActuelle; }
-    /** @return issue de la partie */
+    /** {@return issue de la partie} */
     public EtatPartie getEtat() { return etat; }
-    /** @return vrai tant que la partie permet des actions */
+    /** {@return vrai tant que la partie permet des actions} */
     public boolean estEnCours() { return etat == EtatPartie.EN_COURS; }
-    /** @return vrai pendant un combat actif */
+    /** {@return vrai pendant un combat actif} */
     public boolean estEnCombat() { return estEnCours() && salleActuelle.estHostile(); }
-    /** @return possibilité de boire une potion maintenant */
+    /** {@return possibilité de boire une potion maintenant} */
     public boolean peutBoire() { return estEnCours() && heros.getVie() < heros.getVieMax() && heros.getInventaire().getPotions() > 0; }
-    /** @return possibilité d'ouvrir le coffre actuel */
+    /** {@return possibilité d'ouvrir le coffre actuel} */
     public boolean peutOuvrir() { return estEnCours() && !estEnCombat() && salleActuelle.getCoffre() != null && !salleActuelle.estUtilisee(); }
-    /** @return possibilité d'utiliser le repos maintenant */
+    /** {@return possibilité d'utiliser le repos maintenant} */
     public boolean peutReposer() { return estEnCours() && !estEnCombat() && salleActuelle.estRepos() && !salleActuelle.estUtilisee() && heros.getVie() < heros.getVieMax(); }
     /**
      * Indique si un passage peut être emprunté maintenant.
@@ -57,14 +57,14 @@ public final class Partie {
         salleActuelle = donjon.getSalle(id); salleActuelle.visiter();
         return "Vous entrez dans : " + salleActuelle.getNom() + (estEnCombat() ? ". Un ennemi bloque les passages !" : ".");
     }
-    /** @return récit d'une attaque et de sa réponse éventuelle */
+    /** {@return récit d'une attaque et de sa réponse éventuelle} */
     public String attaquer() {
         exigerCombat();
         return finirAction(GestionnaireCombat.attaquer(heros, salleActuelle.getEnnemi()), false);
     }
-    /** @return récit d'une défense valable pour une seule réponse */
+    /** {@return récit d'une défense valable pour une seule réponse} */
     public String defendre() { exigerCombat(); return finirAction("Vous vous protégez (+8 d'armure pour cette réponse).", true); }
-    /** @return récit du soin et de la réponse éventuelle */
+    /** {@return récit du soin et de la réponse éventuelle} */
     public String boirePotion() {
         exigerEnCours();
         if (!peutBoire()) throw new IllegalStateException("Potion impossible : vie déjà pleine ou inventaire vide.");
@@ -84,7 +84,7 @@ public final class Partie {
         heros.getInventaire().equiper(arme);
         return "Arme équipée : " + arme + ".";
     }
-    /** @return récompense du coffre consommé une seule fois */
+    /** {@return récompense du coffre consommé une seule fois} */
     public String ouvrirCoffre() {
         exigerEnCours();
         if (!peutOuvrir()) throw new IllegalStateException("Aucun coffre à ouvrir ici.");
@@ -94,7 +94,7 @@ public final class Partie {
         heros.getInventaire().ajouterPotions(potions); salleActuelle.utiliser();
         return "Coffre ouvert : " + arme + " et " + potions + " potion(s). Pensez à équiper l'arme.";
     }
-    /** @return événement de repos, consommé seulement si le héros est blessé */
+    /** {@return événement de repos, consommé seulement si le héros est blessé} */
     public String seReposer() {
         exigerEnCours();
         if (!peutReposer()) throw new IllegalStateException("Repos indisponible : sanctuaire déjà utilisé, absent ou vie pleine.");

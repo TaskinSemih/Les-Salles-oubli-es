@@ -38,6 +38,6 @@ public final class Donjon {
         if (salle == null) throw new IllegalArgumentException("Salle inconnue : " + id);
         return salle;
     }
-    /** @return collection non modifiable des neuf salles */
+    /** {@return collection non modifiable des neuf salles} */
     public Collection<Salle> getSalles() { return Collections.unmodifiableCollection(salles.values()); }
 }

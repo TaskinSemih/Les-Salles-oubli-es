@@ -23,17 +23,17 @@ public abstract class Personnage {
         this.attaque = attaque; this.armure = armure;
     }
 
-    /** @return nom affiché */
+    /** {@return nom affiché} */
     public final String getNom() { return nom; }
-    /** @return points de vie actuels */
+    /** {@return points de vie actuels} */
     public final int getVie() { return vie; }
-    /** @return maximum des points de vie */
+    /** {@return maximum des points de vie} */
     public final int getVieMax() { return vieMax; }
-    /** @return puissance sans équipement */
+    /** {@return puissance sans équipement} */
     public final int getAttaqueBase() { return attaque; }
-    /** @return armure permanente */
+    /** {@return armure permanente} */
     public final int getArmure() { return armure; }
-    /** @return vrai si le personnage est mort */
+    /** {@return vrai si le personnage est mort} */
     public final boolean estMort() { return vie == 0; }
 
     /** Applique des dégâts non négatifs sans descendre sous zéro. */

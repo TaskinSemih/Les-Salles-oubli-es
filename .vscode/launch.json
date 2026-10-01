@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Les Salles oubliées",
+      "request": "launch",
+      "mainClass": "fr.utbm.sallesoubliees.Application",
+      "projectName": "les-salles-oubliees"
+    }
+  ]
+}
