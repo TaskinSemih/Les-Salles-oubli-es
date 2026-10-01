@@ -239,7 +239,8 @@ public final class FenetreJeu extends JFrame {
     private void charger() {
         JFileChooser choix = choisirFichier();
         if (choix.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) return;
-        executerFichier(() -> sauvegardes.charger(choix.getSelectedFile().toPath()), partie -> {
+        Path fichier = choix.getSelectedFile().toPath();
+        executerFichier(() -> sauvegardes.charger(fichier), partie -> {
             if (!confirmerAbandon()) return;
             controleur.adopter(partie); journal.setText(""); ajouterJournal("Partie chargée. Vous reprenez dans : " + partie.getSalleActuelle().getNom() + ".");
             pages.show(contenu, "jeu");
