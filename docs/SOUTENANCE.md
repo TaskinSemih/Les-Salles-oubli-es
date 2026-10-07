@@ -23,6 +23,8 @@ Soutenance : **19 novembre 2026**. Dépôt du livrable : **21 novembre 2026**. L
 
 ## Classes essentielles à comprendre
 
+Pour la refonte, montrer d'abord le héros dans une salle et la marche ZQSD, puis un tour animé. `Partie.resoudre` applique les règles une fois et produit `ResultatAction` avec instantanés et événements. `ControleurAnimation` anime des copies des PV sans rejouer les dégâts. `SceneJeu`, `RenduSalle` et `RenduCombat` partagent un cache d'atlas et un timer qui s'arrête au repos. Présenter aussi les prompts et la provenance des images dans [ASSETS.md](ASSETS.md), en distinguant assistance graphique et contributions des étudiants.
+
 | Classe ou ensemble | Sujet à expliquer |
 | --- | --- |
 | `Partie` | Point d'entrée des actions, états autorisés, exploration et fin de partie. |

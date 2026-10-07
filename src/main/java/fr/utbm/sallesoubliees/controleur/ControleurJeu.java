@@ -5,6 +5,8 @@ import fr.utbm.sallesoubliees.modele.Partie;
 import fr.utbm.sallesoubliees.modele.EtatSauvegarde;
 import fr.utbm.sallesoubliees.modele.SauvegardePartie;
 import java.util.Objects;
+import fr.utbm.sallesoubliees.modele.ActionCombat;
+import fr.utbm.sallesoubliees.modele.ResultatAction;
 
 /** Point de coordination de l'interface : conserve uniquement la partie actuellement affichée. */
 public final class ControleurJeu {
@@ -34,6 +36,12 @@ public final class ControleurJeu {
     public String ouvrir() { return partie.ouvrirCoffre(); }
     /** {@return effet du repos} */
     public String reposer() { return partie.seReposer(); }
+    /**
+     * Résout exactement un tour, à rejouer uniquement dans la présentation.
+     * @param action commande du joueur
+     * @return faits et instantanés indépendants
+     */
+    public ResultatAction resoudre(ActionCombat action) { return partie.resoudre(action); }
     /**
      * Déplace le héros selon les règles.
      * @param salle destination

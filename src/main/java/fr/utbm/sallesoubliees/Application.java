@@ -13,10 +13,11 @@ public final class Application {
      * @param args arguments non utilisés
      */
     public static void main(String[] args) {
+        var ressources = new fr.utbm.sallesoubliees.vue.GestionnaireRessources();
         SwingUtilities.invokeLater(() -> {
             try { UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName()); }
             catch (Exception ignored) { /* Le thème Swing par défaut reste utilisable. */ }
-            new FenetreJeu().setVisible(true);
+            new FenetreJeu(ressources).setVisible(true);
         });
     }
 }

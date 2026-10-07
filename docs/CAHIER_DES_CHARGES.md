@@ -38,7 +38,7 @@ Les tests automatiques doivent couvrir dégâts et PV, défense, particularités
 
 ## Hors périmètre
 
-Pas de multijoueur, serveur, compte, monde ouvert, temps réel, carte aléatoire, éditeur de niveaux ni système complexe de quêtes.
+Pas de multijoueur, serveur, compte, monde ouvert, combat en temps réel, carte aléatoire, éditeur de niveaux ni système complexe de quêtes. La marche et les animations visuelles ne consomment aucun tour métier.
 
 ## Livrables attendus
 

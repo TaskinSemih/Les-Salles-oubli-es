@@ -1,4 +1,31 @@
-# Compte rendu de validation — 1er octobre 2026
+# Validation de la refonte — 7 octobre 2026
+
+Branche `feat/visual-rpg`, issue de la version fonctionnelle `22354d6`. Java 21, Maven Wrapper et Swing sous Windows. Le compte rendu initial plus bas est historique et ne vaut pas validation de la refonte.
+
+## Vérifications de la refonte exécutées
+
+Dernière exécution complète : **51 tests, zéro échec, zéro erreur, aucun ignoré**, puis JAR et contrôle Javadoc réussis le 7 octobre 2026. Les échecs intermédiaires liés aux fenêtres de test interactives ont été corrigés avant cette exécution finale.
+
+- Tests conservés : 34 tests métier et fichiers. Huit tests supplémentaires couvrent événements ordonnés, dégâts réellement infligés, invalidité sans effet, golem, rage, synchronisation et défense expirée. Quatre tests vérifient le graphe visuel, les zones praticables et les ressources embarquées.
+- Parcours Swing réel des neuf salles jusqu'à la victoire : coffres, équipement acier puis runique, sanctuaire, tous les ennemis. Double clic limité à un tour, pause avec timer arrêté et sauvegarde verrouillée pendant la séquence. Captures générées pendant le parcours.
+- Régression de marche près du pilier de l'Ossuaire : le waypoint est atteint exactement ; le trajet ne bloque plus les commandes. Une absence de progression annule aussi le trajet avec un message.
+- Défaite et retours à l'accueil répétés : timer arrêté. Fermeture programmatique pendant une animation : timer arrêté.
+- Bindings de marche D pressé/relâché exécutés : position modifiée, instantané métier identique. Cela ne remplace pas un parcours physique au clavier et avec Tab.
+- Vrais dialogues Swing : sélection du fichier de sauvegarde en combat, sélection au chargement, confirmation d'abandon, reprise avec instantané strictement identique. Les composants sont pilotés sur l'EDT ; les fichiers sont écrits dans un dossier temporaire de test.
+- `mvnw.cmd --batch-mode verify javadoc:javadoc -Dtests.interface=true` : packaging et Javadoc stricte vérifiés. Les tests graphiques sont facultatifs et nécessitent un bureau. Leurs fenêtres sont placées hors de la zone visible pour ne pas gêner la partie de l'utilisateur ; le parcours par composants neutralise les événements de focus externes.
+- Captures réelles examinées : accueil, exploration, squelette, boss, inventaire, victoire, défaite et taille minimale 900×620. Planche des 30 poses inspectée après correction de découpe. Le boss vaincu reste invisible ; les éléments et commandes inspectés sont lisibles.
+- Le bureau a limité la demande 1920×1080 à **1297×817** : la capture `resolution-1920x1080.png` décrit une taille demandée, pas un écran Full HD validé. Le plein écran réel et les autres DPI restent à tester.
+- JAR lancé sur le bureau ; titre « Les Salles oubliées · Le serment du Gardien » et activation de la fenêtre confirmés. Aucun téléchargement d'assets à l'exécution.
+
+## Limites actuelles
+
+Version silencieuse. Restent les essais physiques Tab/clavier, DPI 125 % et 150 %, grand écran réel, confirmations d'écrasement/annulation dans toutes les combinaisons, perte de focus pendant un chargement et retours au menu confirmés pendant les animations. Les corrections de focus ont été relues ; le parcours automatisé ne valide pas les interactions avec toutes les autres fenêtres du bureau. La durée et l'ergonomie demandent des essais utilisateurs. La CI de la version initiale ne prouve pas la nouvelle branche ; consulter l'exécution associée au commit publié.
+
+Sources, prompts et limites de découpe : [ASSETS.md](ASSETS.md). Captures et rapports sont régénérables dans `target/`, ignoré par Git. Base de revue retenue : `feat/initial-game`, seule branche distante avant publication ; aucune création de `main` ni fusion.
+
+---
+
+# Historique : validation initiale du 1er octobre 2026
 
 ## Environnement constaté
 

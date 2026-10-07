@@ -68,6 +68,19 @@ Chronométrer séparément une partie complète sans interruption de test. Noter
 
 ## Compte rendu à compléter
 
+### Refonte 2D : contrôles complémentaires
+
+- Flèches et ZQSD : marche orientée, murs et bases des piliers infranchissables, aucun tour consommé. E / Entrée interagit à proximité ; clic sur une porte et carte M lancent une marche vers un passage réel.
+- Vérifier les neuf compositions, le coffre ouvert et l'autel éteint après utilisation. Près du pilier nord-est de l'Ossuaire, rejoindre la porte est sans blocage.
+- Observer attaque, parade, soin plafonné, nombres flottants, préparation du golem, projectile du mage, rage et disparition définitive du Gardien. Double-cliquer Attaquer ne résout qu'un tour.
+- Pendant une animation, ouvrir la pause : image figée et fichiers indisponibles. Reprendre termine la même séquence. Tester retour au menu et fermeture avec annulation puis confirmation.
+- Perdre le focus pendant une animation ou un chargement : aucune progression jusqu'au retour. Recréer plusieurs parties sans multiplication des timers.
+- Charger un combat : même état métier, héros au point sûr (425, 370) ; aucune animation sérialisée. Vérifier les vrais sélecteurs, annulations et confirmations.
+- Tester 900×620, 1280×720, 1920×1080 et DPI 125 %/150 % : proportions, lisibilité, menus défilants, Tab, Espace et raccourcis.
+- Comparer animations normales et réduites : résultats identiques, séquences accélérées. Aucun réglage audio car aucun son n'est inclus.
+
+Les captures `01-accueil` à `07-defaite`, `salle-*` et `resolution-*` sont produites dans `target/captures/` par le rendu réel Swing. L'entrée hostile impose immédiatement la rencontre, avec une courte présentation avant la vue latérale.
+
 | Date / système / JDK / commit | Scénarios exécutés | Observations | Statut et anomalies |
 | --- | --- | --- | --- |
 | À renseigner | À renseigner | À renseigner | Non exécuté |

@@ -41,4 +41,6 @@ Parcours conseillé à vérifier par test : entrée → ossuaire (vaincre) → a
 
 ## Sauvegarde
 
+La refonte 2D ne change pas ces règles. Marcher dans une salle ne consomme aucun tour. Une entrée hostile impose une courte présentation puis le combat, sans possibilité de contourner l'ennemi. La vue lit les événements d'une action déjà résolue et bloque les nouvelles commandes jusqu'à la fin de sa présentation. La position visuelle est réinitialisée à un point sûr au chargement ; elle ne fait pas partie du JSON.
+
 La version 1 du JSON décrit les statistiques, l'inventaire, l'équipement, la salle actuelle, chaque salle et son ennemi (PV et nombre de tours ennemis déjà joués), les visites, coffres, repos et l'état global. Les actions et réponses ennemies sont atomiques : une sauvegarde intervient entre deux actions, lorsque la défense temporaire a expiré. Aucun état transitoire de défense n'est donc à enregistrer. Le journal est informatif et n'est pas conservé.
