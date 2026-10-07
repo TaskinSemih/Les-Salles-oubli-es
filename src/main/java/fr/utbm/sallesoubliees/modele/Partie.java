@@ -1,5 +1,10 @@
 package fr.utbm.sallesoubliees.modele;
 
+import java.util.ArrayList;
+import java.util.List;
+import static fr.utbm.sallesoubliees.modele.EvenementJeu.Cible.*;
+import static fr.utbm.sallesoubliees.modele.EvenementJeu.Type.*;
+
 /** Point d'entrée des actions métier. Chaque action valide est résolue entièrement. */
 public final class Partie {
     private final Heros heros;
@@ -59,19 +64,58 @@ public final class Partie {
     }
     /** {@return récit d'une attaque et de sa réponse éventuelle} */
     public String attaquer() {
-        exigerCombat();
-        return finirAction(GestionnaireCombat.attaquer(heros, salleActuelle.getEnnemi()), false);
+        return messageOuErreur(resoudre(ActionCombat.ATTAQUER));
     }
     /** {@return récit d'une défense valable pour une seule réponse} */
-    public String defendre() { exigerCombat(); return finirAction("Vous vous protégez (+8 d'armure pour cette réponse).", true); }
+    public String defendre() { return messageOuErreur(resoudre(ActionCombat.DEFENDRE)); }
     /** {@return récit du soin et de la réponse éventuelle} */
     public String boirePotion() {
-        exigerEnCours();
-        if (!peutBoire()) throw new IllegalStateException("Potion impossible : vie déjà pleine ou inventaire vide.");
-        int avant = heros.getVie();
-        heros.getInventaire().consommerPotion(); heros.soigner(Potion.SOIN);
-        String message = "Potion consommée : +" + (heros.getVie() - avant) + " PV.";
-        return estEnCombat() ? finirAction(message, false) : message;
+        return messageOuErreur(resoudre(ActionCombat.POTION));
+    }
+
+    /**
+     * Applique une seule fois la commande et produit ses faits, même si la vue les anime plus tard.
+     * Une commande refusée garde exactement le même état et ne produit aucun événement.
+     * @param action commande du joueur
+     * @return résolution immuable
+     */
+    public ResultatAction resoudre(ActionCombat action) {
+        EtatSauvegarde avant = SauvegardePartie.capturer(this);
+        try {
+            exigerEnCours();
+            if (action == null) throw new IllegalStateException("Action inconnue.");
+            if (action != ActionCombat.POTION) exigerCombat();
+            else if (!peutBoire()) throw new IllegalStateException("Potion impossible : vie déjà pleine ou inventaire vide.");
+        } catch (IllegalStateException erreur) {
+            return new ResultatAction(false, erreur.getMessage(), avant, avant, List.of());
+        }
+        List<EvenementJeu> faits = new ArrayList<>();
+        String message;
+        if (action == ActionCombat.ATTAQUER) {
+            Ennemi ennemi = salleActuelle.getEnnemi(); int vieAvant = ennemi.getVie();
+            faits.add(new EvenementJeu(ATTAQUE, HEROS, 0, heros.getVie()));
+            message = GestionnaireCombat.attaquer(heros, ennemi);
+            faits.add(new EvenementJeu(DEGATS, ENNEMI, vieAvant - ennemi.getVie(), ennemi.getVie()));
+            if (ennemi instanceof Boss && vieAvant > 45 && ennemi.getVie() <= 45 && !ennemi.estMort())
+                faits.add(new EvenementJeu(RAGE, ENNEMI, 0, ennemi.getVie()));
+        } else if (action == ActionCombat.DEFENDRE) {
+            faits.add(new EvenementJeu(DEFENSE, HEROS, GestionnaireCombat.BONUS_DEFENSE, heros.getVie()));
+            message = "Vous vous protégez (+8 d'armure pour cette réponse).";
+        } else {
+            int vieAvant = heros.getVie();
+            heros.getInventaire().consommerPotion(); heros.soigner(Potion.SOIN);
+            faits.add(new EvenementJeu(SOIN, HEROS, heros.getVie() - vieAvant, heros.getVie()));
+            message = "Potion consommée : +" + (heros.getVie() - vieAvant) + " PV.";
+        }
+        if (salleActuelle.getEnnemi() != null && (action != ActionCombat.POTION || estEnCombat()))
+            message = finirAction(message, action == ActionCombat.DEFENDRE, faits);
+        return new ResultatAction(true, message, avant, SauvegardePartie.capturer(this), faits);
+    }
+
+    /** Préserve l'API historique et ses exceptions, utilisée par les tests et l'exploration. */
+    private String messageOuErreur(ResultatAction resultat) {
+        if (!resultat.valide()) throw new IllegalStateException(resultat.message());
+        return resultat.message();
     }
     /**
      * Change d'arme hors combat, sans jamais cumuler les bonus.
@@ -102,19 +146,30 @@ public final class Partie {
         return "Le sanctuaire restaure tous vos PV. Son pouvoir est épuisé.";
     }
     /** Termine atomiquement l'action ; récompense et issue précèdent toute contre-attaque. */
-    private String finirAction(String message, boolean defense) {
+    private String finirAction(String message, boolean defense, List<EvenementJeu> faits) {
         Ennemi ennemi = salleActuelle.getEnnemi();
         if (ennemi == null) return message;
         if (ennemi.estMort()) {
+            faits.add(new EvenementJeu(MORT, ENNEMI, 0, 0));
             if (ennemi instanceof Boss) {
                 etat = EtatPartie.VICTOIRE;
+                faits.add(new EvenementJeu(VICTOIRE, HEROS, 0, heros.getVie()));
                 return message + "\nVictoire ! Le Gardien est vaincu. Les salles sont libérées.";
             }
             heros.getInventaire().ajouterPotions(1);
+            faits.add(new EvenementJeu(RECOMPENSE, HEROS, 1, heros.getVie()));
             return message + "\n" + ennemi.getNom() + " est vaincu. Vous trouvez une potion.";
         }
+        boolean preparation = ennemi.puissanceProchaineAttaque() == 0;
+        faits.add(new EvenementJeu(preparation ? PREPARATION : ATTAQUE, ENNEMI, 0, ennemi.getVie()));
+        int vieAvant = heros.getVie();
         message += "\n" + GestionnaireCombat.repondre(heros, ennemi, defense);
-        if (heros.estMort()) { etat = EtatPartie.DEFAITE; message += "\nDéfaite. Votre exploration s'achève ici."; }
+        if (!preparation) faits.add(new EvenementJeu(DEGATS, HEROS, vieAvant - heros.getVie(), heros.getVie()));
+        if (heros.estMort()) {
+            etat = EtatPartie.DEFAITE;
+            faits.add(new EvenementJeu(MORT, HEROS, 0, 0)); faits.add(new EvenementJeu(DEFAITE, HEROS, 0, 0));
+            message += "\nDéfaite. Votre exploration s'achève ici.";
+        }
         return message;
     }
 }

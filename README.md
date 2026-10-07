@@ -4,6 +4,12 @@ Jeu de donjon local en Java 21 et Swing, réalisé pour un projet universitaire 
 
 L'interface et la documentation sont en français. Aucune image distante, aucun compte joueur ni serveur. L'objectif de durée est de 10 à 15 minutes ; il reste à mesurer auprès de joueurs. Soutenance : **19 novembre 2026** ; dépôt : **21 novembre 2026**.
 
+## Une scène de donjon 2D
+
+Héros animé dans quatre directions, neuf salles décorées et combats latéraux avec poses, dégâts flottants, soins et effets magiques. La carte (M), l'inventaire (I) et le journal (J) sont des panneaux secondaires. En combat : 1 attaque, 2 défense, 3 potion. Échap ouvre la pause et les options d'animations réduites. Cette version est silencieuse.
+
+Les trois atlas originaux sont embarqués : [direction artistique](docs/DIRECTION_ARTISTIQUE.md), [ressources et prompts](docs/ASSETS.md). Les captures réelles sont régénérées par le test Swing dans `target/captures/`. La position visuelle n'est pas sauvegardée : au chargement, le héros revient au point praticable (425, 370) de la salle enregistrée.
+
 ## Prérequis
 
 - Un **JDK 21**, avec `java -version` et `javac -version` disponibles.
@@ -18,7 +24,7 @@ Si Java manque, installer un JDK 21, par exemple [Eclipse Temurin](https://adopt
 ```sh
 git clone https://github.com/TaskinSemih/Les-Salles-oubli-es.git
 cd Les-Salles-oubli-es
-git switch feat/initial-game
+git switch feat/visual-rpg
 ```
 
 Windows PowerShell, depuis la racine :
@@ -39,12 +45,12 @@ Le JAR contient les dépendances Jackson : il peut être copié puis exécuté h
 
 ## Jouer
 
-1. Choisir **Nouvelle partie**, puis cliquer sur l'Ossuaire sur la carte.
+1. Choisir **Nouvelle partie**, puis cliquer la porte est pour la rejoindre, ou marcher avec les flèches/ZQSD et interagir avec E ou Entrée.
 2. **Attaquer** inflige des dégâts ; **Défendre** protège de la seule réponse suivante. Lire l'intention adverse, surtout face au golem.
 3. Boire une potion rend jusqu'à 35 PV et consomme une réponse ennemie en combat. Une action impossible est désactivée.
-4. Après le squelette, visiter l'arsenal, ouvrir le coffre, sélectionner puis équiper l'acier. Changer d'arme se fait hors combat.
+4. Après le squelette, visiter l'arsenal, ouvrir le coffre, ouvrir l'inventaire avec I puis équiper l'acier. Changer d'arme se fait hors combat.
 5. Le sanctuaire fournit un soin complet unique. La bibliothèque mène à l'antichambre, au trésor et au boss. Les passages sont bidirectionnels.
-6. **Sauvegarder** et **Charger** fonctionnent entre deux actions, même pendant un combat. Après victoire ou défaite, choisir **Nouvelle partie** ou charger une sauvegarde.
+6. Dans **Échap · Pause**, **Sauvegarder** et **Charger** fonctionnent entre deux actions, même pendant un combat. Après victoire ou défaite, choisir **Nouvelle partie** ou charger une sauvegarde.
 
 Les noms, positions et visites sont affichés sur la carte ; les infobulles précisent le contenu des salles. Le journal explique les résultats de chaque action. Le déplacement est bloqué tant que l'ennemi de la salle est vivant.
 

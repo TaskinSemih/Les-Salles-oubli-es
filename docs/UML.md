@@ -22,6 +22,7 @@ classDiagram
         +ouvrirCoffre() String
         +seReposer() String
         +estEnCombat() boolean
+        +resoudre(ActionCombat action) ResultatAction
     }
     class EtatPartie {
         <<enumeration>>
@@ -119,6 +120,66 @@ Les passages sont stockés comme identifiants de salles (`Set<String>`), pas com
 
 `Potion` contient uniquement la constante de soin ; les potions restantes sont un nombre dans `Inventaire`. Aucune classe `Objet` n'existe : les besoins actuels ne justifient pas une hiérarchie d'objets générique. Les classes utilitaires `Potion` et `GestionnaireCombat` ont un constructeur privé. Dans le diagramme, `$` indique un membre statique et `~` une méthode accessible uniquement dans le package.
 
+## Résolution et faits métier
+
+Ces types appartiennent également à `modele`. Les énumérations `Type` et `Cible` sont imbriquées dans `EvenementJeu`.
+
+```mermaid
+classDiagram
+    direction LR
+    class Partie {
+        +resoudre(ActionCombat action) ResultatAction
+    }
+    class ActionCombat {
+        <<enumeration>>
+        ATTAQUER
+        DEFENDRE
+        POTION
+    }
+    class ResultatAction {
+        <<record>>
+        boolean valide
+        String message
+        EtatSauvegarde avant
+        EtatSauvegarde apres
+        List~EvenementJeu~ evenements
+    }
+    class EvenementJeu {
+        <<record>>
+        Type type
+        Cible cible
+        int valeur
+        int vieApres
+    }
+    class Type {
+        <<enumeration>>
+        ATTAQUE
+        DEFENSE
+        SOIN
+        DEGATS
+        PREPARATION
+        RAGE
+        MORT
+        RECOMPENSE
+        VICTOIRE
+        DEFAITE
+    }
+    class Cible {
+        <<enumeration>>
+        HEROS
+        ENNEMI
+    }
+    class EtatSauvegarde
+    Partie ..> ActionCombat
+    Partie ..> ResultatAction : produit
+    ResultatAction --> "0..*" EvenementJeu : liste copiee
+    ResultatAction --> EtatSauvegarde : avant et apres
+    EvenementJeu --> Type
+    EvenementJeu --> Cible
+```
+
+Le résultat décrit une action déjà entièrement résolue. Une commande invalide conserve le même état et produit zéro événement. `cible` désigne le personnage concerné par le fait : attaquant pour `ATTAQUE`, victime pour `DEGATS`. Ces données n'ont aucune dépendance à la durée ou aux coordonnées d'une animation et n'étendent pas le format JSON version 1.
+
 ## Instantané et persistance
 
 `EtatSauvegarde` et `SauvegardePartie` sont dans `modele`. Les trois records `EtatHeros`, `EtatSalle` et `EtatEnnemi` sont déclarés à l'intérieur d'`EtatSauvegarde`. Seuls `GestionnaireSauvegarde` et `ExceptionSauvegarde` appartiennent à `persistance`.
@@ -200,6 +261,15 @@ classDiagram
     class CarteDonjon {
         +afficher(Partie partie, boolean occupe) void
     }
+    class SceneJeu {
+        +afficher(Partie nouvelle, String provenance) void
+        +jouer(ResultatAction resultat, Runnable fin) void
+        +marcherVersPorte(String salle) void
+        +suspendre(boolean valeur) void
+        +stabiliser() void
+        +arreter() void
+    }
+    class GestionnaireRessources
     class Theme
     class ControleurJeu {
         -Partie partie
@@ -210,6 +280,7 @@ classDiagram
         +attaquer() String
         +deplacer(String salle) String
         +equiper(Arme arme) String
+        +resoudre(ActionCombat action) ResultatAction
     }
     class Partie
     class SauvegardePartie
@@ -226,19 +297,102 @@ classDiagram
     Application ..> FenetreJeu : creation sur EDT
     JFrame <|-- FenetreJeu
     JPanel <|-- CarteDonjon
+    JPanel <|-- SceneJeu
     FenetreJeu *-- "1" ControleurJeu
     FenetreJeu *-- "1" GestionnaireSauvegarde
     FenetreJeu *-- "1" CarteDonjon
+    FenetreJeu *-- "1" SceneJeu
+    FenetreJeu *-- "1" GestionnaireRessources
+    SceneJeu --> GestionnaireRessources
     FenetreJeu ..> Theme
     CarteDonjon ..> Theme
     FenetreJeu ..> SwingWorker : sous-classe anonyme
     FenetreJeu ..> Partie : consultation
     CarteDonjon --> "0..1" Partie : affichage
+    SceneJeu --> "0..1" Partie : consultation
     ControleurJeu --> "0..1" Partie : partie courante
     ControleurJeu ..> SauvegardePartie : capture
     GestionnaireSauvegarde ..> SauvegardePartie : restauration
 ```
 
-`Application` est dans le package racine ; les classes de présentation sont dans `vue`, `ControleurJeu` dans `controleur`. Le contrôleur conserve zéro partie à l'accueil, puis la partie active. `CarteDonjon` reçoit à sa construction une fonction `Consumer<String>` qui transmet les demandes de déplacement à la fenêtre ; elle ne possède pas son propre contrôleur.
+`Application` est dans le package racine ; les classes de présentation sont dans `vue`, `ControleurJeu` dans `controleur`. Le contrôleur conserve zéro partie à l'accueil, puis la partie active. `FenetreJeu` compose une scène centrale et les panneaux superposés. `CarteDonjon` et `SceneJeu` transmettent leurs intentions au moyen de fonctions de rappel ; elles ne possèdent pas leur propre contrôleur métier. La carte peut demander à la scène de marcher vers une porte, mais le modèle conserve la validation du changement de salle.
 
 `FenetreJeu` capture l'instantané sur l'EDT avant une sauvegarde. Sa sous-classe anonyme de `SwingWorker` réalise les entrées/sorties et la reconstruction en arrière-plan, puis publie le résultat dans `done` sur l'EDT. Le contrôleur n'adopte la nouvelle partie qu'après succès et confirmation d'abandon si nécessaire. L'ancienne partie reste intacte en cas d'erreur. Les règles de jeu restent dans le modèle même lorsque la vue désactive préventivement un bouton.
+
+## Présentation de la salle et du combat
+
+```mermaid
+classDiagram
+    direction TB
+    class SceneJeu {
+        -double x
+        -double y
+        +estOccupe() boolean
+        +estTimerActif() boolean
+        +setReduite(boolean valeur) void
+    }
+    class PlanSalle {
+        <<record>>
+        String sousTitre
+        Color lumiere
+        +de(String id) PlanSalle$
+        +praticable(double x, double y) boolean
+    }
+    class Porte {
+        <<record>>
+        String destination
+        char cote
+        int x
+        int y
+    }
+    class Decor {
+        <<record>>
+        int objet
+        int x
+        int y
+        int hauteur
+        boolean solide
+        +obstacle() Rectangle2D
+    }
+    class RenduSalle
+    class RenduCombat
+    class GestionnaireRessources {
+        -BufferedImage[][] personnages
+        -BufferedImage[] objets
+        +icone(int id, int taille) ImageIcon
+    }
+    class ControleurAnimation {
+        -int vieHeros
+        -int vieEnnemi
+        -int potions
+        +demarrer(ResultatAction resolution) void
+        +avancer(double millisecondes) void
+        +finirImmediatement() void
+        +courant() EvenementJeu
+        +progression() double
+    }
+    class ResultatAction
+    class EvenementJeu
+    class Timer {
+        <<Swing>>
+    }
+    SceneJeu *-- "1" RenduSalle
+    SceneJeu *-- "1" RenduCombat
+    SceneJeu *-- "1" ControleurAnimation
+    SceneJeu *-- "1" Timer
+    SceneJeu --> "1" PlanSalle
+    PlanSalle --> "1..3" Porte : portes
+    PlanSalle --> "0..*" Decor : decors
+    RenduSalle --> GestionnaireRessources
+    RenduSalle ..> PlanSalle
+    RenduCombat --> GestionnaireRessources
+    RenduCombat ..> ControleurAnimation
+    ControleurAnimation --> "0..1" ResultatAction
+    ControleurAnimation ..> EvenementJeu
+```
+
+`Porte` et `Decor` sont des records imbriqués dans `PlanSalle` ; les listes du plan sont copiées. `RenduSalle` et `RenduCombat` sont internes au package `vue`. Les images sont chargées une fois puis réutilisées. Les atlas générés nécessitent une découpe explicite documentée dans [ASSETS.md](ASSETS.md).
+
+Le timer appartient uniquement à la scène et avance une horloge de présentation sur l'EDT. `ControleurAnimation` ne dépend pas de Swing et ne modifie jamais `Partie` : ses PV affichés progressent entre les instantanés avant/après déjà produits par le modèle. Les durées, poses et déplacements restent dans `vue`.
+
+Le modèle ne conserve que la salle courante. La position locale `(x, y)`, les collisions de décor et les trajets appartiennent à `SceneJeu`/`PlanSalle`, ne sont pas sauvegardés et ne changent pas les règles de déplacement entre salles. Un chargement replace le héros visuel à `(425, 370)` ; JSON reste en version 1.
