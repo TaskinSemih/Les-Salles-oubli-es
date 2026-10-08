@@ -2,6 +2,8 @@
 
 Ce document présente la conception générale du jeu sous une forme volontairement simple. Les attributs et méthodes secondaires sont omis afin de faire apparaître les responsabilités et les relations entre objets.
 
+![Schéma de conception POO simplifié](schema-conception-poo.png)
+
 ## Diagramme principal
 
 ```mermaid
