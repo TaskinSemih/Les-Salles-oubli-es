@@ -1,5 +1,7 @@
 # Diagrammes de classes
 
+Pour une présentation rapide devant un enseignant, commencer par le [schéma de conception POO simplifié](SCHEMA_CONCEPTION_POO.md). La présente page sert de référence technique détaillée.
+
 Ces diagrammes décrivent les classes du code Java. Pour rester lisibles, ils séparent le modèle de jeu, les données de sauvegarde et l'intégration Swing ; les classes répétées désignent les mêmes types. Les accesseurs et méthodes privées secondaires sont omis. `+` désigne une opération publique, `-` un attribut privé, `<|--` l'héritage, `*--` la composition et `..>` une dépendance d'utilisation.
 
 ## Modèle de jeu

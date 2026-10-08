@@ -91,7 +91,7 @@ docs/                    conception, UML et préparation de la soutenance
 ```
 
 - [Cahier des charges](docs/CAHIER_DES_CHARGES.md), [règles chiffrées](docs/REGLES_DU_JEU.md).
-- [Architecture](docs/ARCHITECTURE.md), [diagrammes UML Mermaid](docs/UML.md).
+- [Schéma de conception POO simplifié](docs/SCHEMA_CONCEPTION_POO.md), [architecture](docs/ARCHITECTURE.md), [diagrammes UML complets](docs/UML.md).
 - [Tests manuels](docs/TESTS_MANUELS.md), [résultats de validation](docs/VALIDATION.md).
 - [Répartition proposée](docs/REPARTITION.md), [soutenance](docs/SOUTENANCE.md).
 - [Contribution Git](CONTRIBUTING.md), [conventions des agents](AGENTS.md).
