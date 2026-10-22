@@ -2,7 +2,67 @@
 
 Ce document présente la conception générale du jeu sous une forme volontairement simple. Les attributs et méthodes secondaires sont omis afin de faire apparaître les responsabilités et les relations entre objets.
 
-![Schéma de conception POO simplifié](schema-conception-poo.png)
+Le PNG antérieur décrit le socle visuel. Le diagramme ci-dessous présente son évolution tactique actuelle.
+
+## Évolution tactique — version 2
+
+Ce diagramme complète les classes historiques ci-dessous. La vue consulte désormais `CombatTactique.intention()` ; les méthodes historiques de puissance/intention des ennemis restent disponibles pour les anciennes API, tandis que le jeu utilise les décisions structurées.
+
+```mermaid
+classDiagram
+    Partie *-- CombatTactique
+    CombatTactique --> SourceAleatoire
+    SourceAleatoire <|.. HasardReproductible
+    CombatTactique --> EtatTactique : capture
+    EtatSauvegarde --> EtatTactique
+    EtatTactique --> DecisionEnnemi
+    EtatTactique --> EffetCombat
+    CombatTactique ..> ContexteCombat
+    Ennemi ..> ContexteCombat : consulte
+    Ennemi ..> DecisionEnnemi : decider
+    Ennemi <|-- Squelette
+    Ennemi <|-- Golem
+    Ennemi <|-- Mage
+    Ennemi <|-- Boss
+    CombatTactique ..> EvenementJeu : produit
+    ResultatAction --> EvenementJeu
+    ControleurAnimation --> ResultatAction : lit
+    CombatTactique ..> EvenementSalle : propose
+    EvenementSalle --> ChoixEvenement
+    class SourceAleatoire {
+        <<interface>>
+        +prochainEntier(int borne) int
+        +etat() long
+    }
+    class CombatTactique {
+        -SourceAleatoire hasard
+        -int elan
+        -DecisionEnnemi decision
+        -List historique
+        -List effets
+        +capturer() EtatTactique
+        +intention() String
+    }
+    class Ennemi {
+        <<abstract>>
+        +decider(ContexteCombat, SourceAleatoire) DecisionEnnemi
+    }
+    class EffetCombat {
+        <<record>>
+        Type type
+        Cible cible
+        int duree
+    }
+    class DecisionEnnemi {
+        <<record>>
+        ActionEnnemi action
+        int puissance
+        boolean precise
+    }
+```
+
+La décision est tirée une fois avant le choix du joueur. Le contexte est une copie, les effets sont des valeurs immuables. La résolution produit les événements puis sélectionne l'intention suivante. Aucun hasard ni calcul de dégâts dans la vue. Les sauvegardes utilisent la version 2, la version 1 n'est pas migrée.
+
 
 ## Diagramme principal
 

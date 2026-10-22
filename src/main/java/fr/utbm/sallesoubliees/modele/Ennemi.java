@@ -5,10 +5,14 @@ public abstract class Ennemi extends Personnage {
     private int tours;
     /**
      * Construit un adversaire.
-     * @param nom nom affiché
-     * @param vie maximum de vie
-     * @param attaque puissance normale
-     * @param armure armure permanente
+     *
+ * @param nom nom affiché
+     *
+ * @param vie maximum de vie
+     *
+ * @param attaque puissance normale
+     *
+ * @param armure armure permanente
      */
     protected Ennemi(String nom, int vie, int attaque, int armure) { super(nom, vie, attaque, armure); }
     /** {@return nombre de réponses ennemies déjà effectuées} */
@@ -19,6 +23,12 @@ public abstract class Ennemi extends Personnage {
     public abstract int puissanceProchaineAttaque();
     /** {@return intention lisible avant le choix du joueur} */
     public abstract String getIntention();
+    /** Choisit une intention selon sa stratégie propre.
+     *
+ * @param contexte informations du combat
+ * @param hasard tirage injectable
+ * @return décision annoncée */
+    public abstract DecisionEnnemi decider(ContexteCombat contexte, SourceAleatoire hasard);
     /** {@return vrai si l'attaque traverse l'armure permanente} */
     public boolean ignoreArmure() { return false; }
     /** Comptabilise une réponse après son exécution. */

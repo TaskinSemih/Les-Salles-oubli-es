@@ -19,7 +19,7 @@ class SauvegardeTest {
     private final ObjectMapper json = new ObjectMapper();
 
     @Test void allerRetourNouvellePartieEtInstantaneIndependant() throws Exception {
-        Partie p = new Partie(); EtatSauvegarde instantane = SauvegardePartie.capturer(p);
+        Partie p = new Partie(new HasardReproductible(3)); EtatSauvegarde instantane = SauvegardePartie.capturer(p);
         p.deplacer("ossuaire");
         Path fichier = dossier.resolve("sous-dossier/partie.json");
         gestionnaire.sauvegarder(fichier, instantane);
@@ -29,7 +29,7 @@ class SauvegardeTest {
     }
 
     @Test void repriseGolemEntrePreparationEtFrappeEstExacte() throws Exception {
-        Partie original = combatGolem(); original.attaquer();
+        Partie original = combatGolem(); original.resoudre(ActionCombat.OBSERVER);
         Path fichier = dossier.resolve("golem.json");
         gestionnaire.sauvegarder(fichier, SauvegardePartie.capturer(original));
         Partie reprise = gestionnaire.charger(fichier);
@@ -40,20 +40,20 @@ class SauvegardeTest {
     }
 
     @Test void repriseApresDefenseNeConservePasDeBonusTemporaire() throws Exception {
-        Partie p = new Partie(); p.deplacer("ossuaire"); p.defendre();
+        Partie p = new Partie(new HasardReproductible(3)); p.deplacer("ossuaire"); p.defendre();
         Path fichier = dossier.resolve("defense.json"); gestionnaire.sauvegarder(fichier, SauvegardePartie.capturer(p));
         Partie chargee = gestionnaire.charger(fichier); chargee.attaquer();
         assertEquals(93, chargee.getHeros().getVie());
     }
 
     @Test void victoireEtDefaiteSeRechargentSansReprendreLeJeu() throws Exception {
-        Partie victoire = new Partie(); victoire.deplacer("ossuaire"); gagner(victoire);
+        Partie victoire = new Partie(new HasardReproductible(3)); victoire.deplacer("ossuaire"); gagner(victoire);
         victoire.deplacer("arsenal"); victoire.ouvrirCoffre(); victoire.equiper(Arme.ACIER);
         victoire.deplacer("repos"); victoire.seReposer(); victoire.deplacer("bibliotheque"); gagner(victoire);
         victoire.deplacer("antichambre"); gagner(victoire); victoire.deplacer("tresor");
         victoire.ouvrirCoffre(); victoire.equiper(Arme.RUNIQUE); victoire.deplacer("antichambre"); victoire.deplacer("boss"); gagner(victoire);
         assertEquals(EtatPartie.VICTOIRE, victoire.getEtat());
-        Partie defaite = new Partie(); defaite.deplacer("ossuaire");
+        Partie defaite = new Partie(new HasardReproductible(3)); defaite.deplacer("ossuaire");
         while (defaite.estEnCours()) defaite.defendre();
         for (Partie fin : new Partie[]{victoire, defaite}) {
             Path fichier = dossier.resolve(fin.getEtat() + ".json");
@@ -74,7 +74,7 @@ class SauvegardeTest {
     }
 
     @Test void remplacementReussiNeLaissePasDeFichierTemporaire() throws Exception {
-        Path fichier = dossier.resolve("partie.json"); Partie p = new Partie();
+        Path fichier = dossier.resolve("partie.json"); Partie p = new Partie(new HasardReproductible(3));
         gestionnaire.sauvegarder(fichier, SauvegardePartie.capturer(p)); p.deplacer("ossuaire");
         gestionnaire.sauvegarder(fichier, SauvegardePartie.capturer(p));
         assertEquals("ossuaire", gestionnaire.charger(fichier).getSalleActuelle().getId());
@@ -83,7 +83,7 @@ class SauvegardeTest {
 
     @Test void echecEcritureConserveAncienFichierEtNettoieTemporaire() throws Exception {
         Path cible = dossier.resolve("repertoire.json"); Files.createDirectory(cible); Files.writeString(cible.resolve("important.txt"), "conserver");
-        assertThrows(ExceptionSauvegarde.class, () -> gestionnaire.sauvegarder(cible, SauvegardePartie.capturer(new Partie())));
+        assertThrows(ExceptionSauvegarde.class, () -> gestionnaire.sauvegarder(cible, SauvegardePartie.capturer(new Partie(new HasardReproductible(3)))));
         assertEquals("conserver", Files.readString(cible.resolve("important.txt")));
         try (var fichiers = Files.list(dossier)) { assertEquals(1, fichiers.count()); }
     }
@@ -132,6 +132,14 @@ class SauvegardeTest {
         refuser(n -> ((ObjectNode)n.get("salles").get(1).get("ennemi")).put("vie", 1));
         refuser(n -> ((ObjectNode)n.get("salles").get(2)).put("visitee", true)); // Arsenal au-delà du squelette vivant.
         refuser(n -> ((ObjectNode)n.get("salles").get(2)).put("utilisee", true));
+        refuser(n -> ((ObjectNode)n.get("tactique")).put("elan", 4));
+        refuser(n -> ((ObjectNode)n.get("tactique")).put("elan", -1));
+        refuser(n -> ((ObjectNode)n.get("tactique")).put("hasard", -1));
+        refuser(n -> ((ObjectNode)n.get("tactique")).put("hasard", 1L << 48));
+        refuser(n -> n.putNull("tactique"));
+        refuser(n -> ((ObjectNode)n.get("tactique")).putArray("historique").add("ATTAQUER"));
+        refuser(n -> ((ObjectNode)n.get("tactique").get("choix")).put("boss", "RISQUER"));
+        refuser(n -> ((ObjectNode)n.get("tactique").get("choix")).put("tresor", "PRUDENT"));
     }
 
     @Test void golemBlesseSansTourEstRefuse() throws Exception {
@@ -144,19 +152,19 @@ class SauvegardeTest {
 
     @Test void donneesSurnumerairesEtFichierTropGrosRefuses() throws Exception {
         Path fichier = dossier.resolve("invalide.json");
-        String valide = json.writeValueAsString(SauvegardePartie.capturer(new Partie()));
+        String valide = json.writeValueAsString(SauvegardePartie.capturer(new Partie(new HasardReproductible(3))));
         Files.writeString(fichier, valide + " {}"); assertThrows(ExceptionSauvegarde.class, () -> gestionnaire.charger(fichier));
         Files.writeString(fichier, " ".repeat(128 * 1024 + 1)); assertThrows(ExceptionSauvegarde.class, () -> gestionnaire.charger(fichier));
     }
 
     private void refuser(Consumer<ObjectNode> mutation) throws Exception {
-        ObjectNode n = json.valueToTree(SauvegardePartie.capturer(new Partie())); mutation.accept(n);
+        ObjectNode n = json.valueToTree(SauvegardePartie.capturer(new Partie(new HasardReproductible(3)))); mutation.accept(n);
         Path fichier = dossier.resolve("invalide.json"); json.writeValue(fichier.toFile(), n);
         assertThrows(ExceptionSauvegarde.class, () -> gestionnaire.charger(fichier), n.toString());
     }
 
     private static Partie combatGolem() {
-        Partie p = new Partie(); p.deplacer("ossuaire"); p.attaquer(); p.attaquer(); p.attaquer(); p.deplacer("forge"); return p;
+        Partie p = new Partie(new HasardReproductible(3)); p.deplacer("ossuaire"); p.attaquer(); p.attaquer(); p.attaquer(); p.deplacer("forge"); return p;
     }
 
     private static void gagner(Partie p) {

@@ -11,6 +11,23 @@ public final class Partie {
     private final Donjon donjon;
     private Salle salleActuelle;
     private EtatPartie etat;
+    private CombatTactique tactique = new CombatTactique(new HasardReproductible(System.nanoTime()));
+    /** Définit les données de cette opération.
+     * @param hasard source injectable pour les simulations et tests */
+    public Partie(SourceAleatoire hasard) { this(); tactique = new CombatTactique(hasard); }
+    /** {@return tactique consultable sans commandes publiques de mutation} */
+    public CombatTactique getTactique() { return tactique; }
+    /** Restaure la tactique après vérification des relations. */
+    void restaurerTactique(EtatTactique e) { tactique = CombatTactique.restaurer(e); }
+    /** {@return événement disponible dans la salle paisible, ou null} */
+    public EvenementSalle getEvenementSalle() { return estEnCours() && !estEnCombat() ? tactique.evenement(salleActuelle.getId()) : null; }
+    /** Définit les données de cette opération.
+     * @param choix décision proposée par le modèle
+ * @return conséquence unique */
+    public String choisirEvenement(ChoixEvenement choix) {
+        if (getEvenementSalle() == null) throw new IllegalStateException("Aucun événement disponible.");
+        return tactique.choisir(salleActuelle.getId(), choix, heros);
+    }
 
     /** Commence une partie indépendante à l'entrée du donjon. */
     public Partie() {
@@ -41,8 +58,10 @@ public final class Partie {
     public boolean peutReposer() { return estEnCours() && !estEnCombat() && salleActuelle.estRepos() && !salleActuelle.estUtilisee() && heros.getVie() < heros.getVieMax(); }
     /**
      * Indique si un passage peut être emprunté maintenant.
-     * @param id destination
-     * @return vrai pour une salle voisine hors combat
+     *
+ * @param id destination
+     *
+ * @return vrai pour une salle voisine hors combat
      */
     public boolean peutDeplacer(String id) { return estEnCours() && !estEnCombat() && salleActuelle.getPassages().contains(id); }
 
@@ -53,13 +72,16 @@ public final class Partie {
 
     /**
      * Emprunte un passage et engage l'ennemi éventuel sans attaque gratuite.
-     * @param id salle voisine
-     * @return événement à afficher
+     *
+ * @param id salle voisine
+     *
+ * @return événement à afficher
      */
     public String deplacer(String id) {
         exigerEnCours();
         if (!peutDeplacer(id)) throw new IllegalStateException("Déplacement impossible : terminez le combat et suivez les passages.");
         salleActuelle = donjon.getSalle(id); salleActuelle.visiter();
+        if (estEnCombat()) tactique.commencer(salleActuelle.getEnnemi());
         return "Vous entrez dans : " + salleActuelle.getNom() + (estEnCombat() ? ". Un ennemi bloque les passages !" : ".");
     }
     /** {@return récit d'une attaque et de sa réponse éventuelle} */
@@ -76,14 +98,17 @@ public final class Partie {
     /**
      * Applique une seule fois la commande et produit ses faits, même si la vue les anime plus tard.
      * Une commande refusée garde exactement le même état et ne produit aucun événement.
-     * @param action commande du joueur
-     * @return résolution immuable
+     *
+ * @param action commande du joueur
+     *
+ * @return résolution immuable
      */
     public ResultatAction resoudre(ActionCombat action) {
         EtatSauvegarde avant = SauvegardePartie.capturer(this);
         try {
             exigerEnCours();
             if (action == null) throw new IllegalStateException("Action inconnue.");
+            if (action == ActionCombat.PUISSANTE && tactique.getElan() < 2) throw new IllegalStateException("Il faut 2 points d’élan.");
             if (action != ActionCombat.POTION) exigerCombat();
             else if (!peutBoire()) throw new IllegalStateException("Potion impossible : vie déjà pleine ou inventaire vide.");
         } catch (IllegalStateException erreur) {
@@ -91,25 +116,27 @@ public final class Partie {
         }
         List<EvenementJeu> faits = new ArrayList<>();
         String message;
-        if (action == ActionCombat.ATTAQUER) {
-            Ennemi ennemi = salleActuelle.getEnnemi(); int vieAvant = ennemi.getVie();
-            faits.add(new EvenementJeu(ATTAQUE, HEROS, 0, heros.getVie()));
-            message = GestionnaireCombat.attaquer(heros, ennemi);
-            faits.add(new EvenementJeu(DEGATS, ENNEMI, vieAvant - ennemi.getVie(), ennemi.getVie()));
-            if (ennemi instanceof Boss && vieAvant > 45 && ennemi.getVie() <= 45 && !ennemi.estMort())
-                faits.add(new EvenementJeu(RAGE, ENNEMI, 0, ennemi.getVie()));
-        } else if (action == ActionCombat.DEFENDRE) {
-            faits.add(new EvenementJeu(DEFENSE, HEROS, GestionnaireCombat.BONUS_DEFENSE, heros.getVie()));
-            message = "Vous vous protégez (+8 d'armure pour cette réponse).";
+        if (estEnCombat()) {
+            message = tactique.resoudre(heros, salleActuelle.getEnnemi(), action, faits);
+            message = finirAction(message, false, faits);
+            if (!estEnCombat()) tactique.terminer();
         } else {
-            int vieAvant = heros.getVie();
-            heros.getInventaire().consommerPotion(); heros.soigner(Potion.SOIN);
-            faits.add(new EvenementJeu(SOIN, HEROS, heros.getVie() - vieAvant, heros.getVie()));
-            message = "Potion consommée : +" + (heros.getVie() - vieAvant) + " PV.";
+            int avantSoin = heros.getVie(); heros.getInventaire().consommerPotion(); heros.soigner(Potion.SOIN);
+            faits.add(new EvenementJeu(SOIN, HEROS, heros.getVie() - avantSoin, heros.getVie()));
+            message = "Potion consommée.";
         }
-        if (salleActuelle.getEnnemi() != null && (action != ActionCombat.POTION || estEnCombat()))
-            message = finirAction(message, action == ActionCombat.DEFENDRE, faits);
-        return new ResultatAction(true, message, avant, SauvegardePartie.capturer(this), faits);
+        String details = faits.stream().map(f -> switch (f.type()) {
+            case DEGATS -> (f.cible() == HEROS ? "Vous perdez " : "L'adversaire perd ") + f.valeur() + " PV.";
+            case SOIN -> (f.cible() == HEROS ? "Vous récupérez " : "L'adversaire récupère ") + f.valeur() + " PV.";
+            case ELAN -> "Élan : " + f.valeur() + "/3.";
+            case INTERRUPTION -> "La préparation est interrompue.";
+            case BRISE_GARDE -> "La protection est brisée.";
+            case CONTRE_ATTAQUE -> "L'adversaire riposte.";
+            case EFFET -> "Altération : " + EffetCombat.Type.values()[f.valeur()] + " (" + f.cible() + ").";
+            case PHASE -> "Le Gardien entre en phase " + f.valeur() + ".";
+            default -> "";
+        }).filter(s -> !s.isEmpty()).collect(java.util.stream.Collectors.joining("\n"));
+        return new ResultatAction(true, message + (details.isEmpty() ? "" : "\n" + details), avant, SauvegardePartie.capturer(this), faits);
     }
 
     /** Préserve l'API historique et ses exceptions, utilisée par les tests et l'exploration. */
@@ -119,8 +146,10 @@ public final class Partie {
     }
     /**
      * Change d'arme hors combat, sans jamais cumuler les bonus.
-     * @param arme arme possédée
-     * @return événement à afficher
+     *
+ * @param arme arme possédée
+     *
+ * @return événement à afficher
      */
     public String equiper(Arme arme) {
         exigerEnCours();
@@ -160,11 +189,6 @@ public final class Partie {
             faits.add(new EvenementJeu(RECOMPENSE, HEROS, 1, heros.getVie()));
             return message + "\n" + ennemi.getNom() + " est vaincu. Vous trouvez une potion.";
         }
-        boolean preparation = ennemi.puissanceProchaineAttaque() == 0;
-        faits.add(new EvenementJeu(preparation ? PREPARATION : ATTAQUE, ENNEMI, 0, ennemi.getVie()));
-        int vieAvant = heros.getVie();
-        message += "\n" + GestionnaireCombat.repondre(heros, ennemi, defense);
-        if (!preparation) faits.add(new EvenementJeu(DEGATS, HEROS, vieAvant - heros.getVie(), heros.getVie()));
         if (heros.estMort()) {
             etat = EtatPartie.DEFAITE;
             faits.add(new EvenementJeu(MORT, HEROS, 0, 0)); faits.add(new EvenementJeu(DEFAITE, HEROS, 0, 0));

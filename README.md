@@ -1,12 +1,12 @@
 # Les Salles oubliées
 
-Jeu de donjon local en Java 21 et Swing, réalisé pour un projet universitaire de programmation orientée objet. Explorez neuf salles, affrontez squelettes, golems et mage, trouvez deux armes puis vainquez le Gardien. Combats déterministes au tour par tour, potions, coffre, repos unique et sauvegardes JSON, y compris en combat.
+Jeu de donjon local en Java 21 et Swing, réalisé pour un projet universitaire de programmation orientée objet. Explorez neuf salles, affrontez squelettes, golems et mage, trouvez deux armes puis vainquez le Gardien. Combats tactiques au tour par tour avec hasard reproductible, potions, coffre, repos unique et sauvegardes JSON, y compris en combat.
 
 L'interface et la documentation sont en français. Aucune image distante, aucun compte joueur ni serveur. L'objectif de durée est de 10 à 15 minutes ; il reste à mesurer auprès de joueurs. Soutenance : **19 novembre 2026** ; dépôt : **21 novembre 2026**.
 
 ## Une scène de donjon 2D
 
-Héros animé dans quatre directions, neuf salles décorées et combats latéraux avec poses, dégâts flottants, soins et effets magiques. La carte (M), l'inventaire (I) et le journal (J) sont des panneaux secondaires. En combat : 1 attaque, 2 défense, 3 potion. Échap ouvre la pause et les options d'animations réduites. Cette version est silencieuse.
+Héros animé dans quatre directions, neuf salles décorées et combats latéraux avec poses, dégâts flottants, soins et effets magiques. La carte (M), l'inventaire (I) et le journal (J) sont des panneaux secondaires. En combat : 1 attaque rapide, 2 défense, 3 potion, 4 frappe puissante (2 Élan), 5 observation. F ouvre une découverte dans les salles concernées. Échap ouvre la pause et les options d'animations réduites. Cette version est silencieuse.
 
 Les trois atlas originaux sont embarqués : [direction artistique](docs/DIRECTION_ARTISTIQUE.md), [ressources et prompts](docs/ASSETS.md). Les captures réelles sont régénérées par le test Swing dans `target/captures/`. La position visuelle n'est pas sauvegardée : au chargement, le héros revient au point praticable (425, 370) de la salle enregistrée.
 
@@ -24,7 +24,7 @@ Si Java manque, installer un JDK 21, par exemple [Eclipse Temurin](https://adopt
 ```sh
 git clone https://github.com/TaskinSemih/Les-Salles-oubli-es.git
 cd Les-Salles-oubli-es
-git switch feat/visual-rpg
+git switch feat/tactical-combat
 ```
 
 Windows PowerShell, depuis la racine :
@@ -42,6 +42,10 @@ java -jar target/les-salles-oubliees-1.0.0.jar
 ```
 
 Le JAR contient les dépendances Jackson : il peut être copié puis exécuté hors ligne sur un ordinateur avec Java 21 et un bureau graphique. Utiliser le JAR sans préfixe `original-`. Pour reconstruire hors ligne après le premier build, ajouter `--offline` à la commande Wrapper ; les plugins doivent déjà être en cache.
+
+## Combats tactiques
+
+L’attaque rapide gagne de l’Élan et interrompt les préparations fragiles. La frappe puissante coûte deux points et brise les protections. Observer évite une riposte et révèle les intentions. Les ennemis choisissent parmi plusieurs comportements selon leur état et les dernières actions du héros ; le Gardien traverse trois phases. Les découvertes de l’arsenal, de la bibliothèque et du trésor proposent un choix risque/récompense facultatif. Voir les [règles tactiques](docs/REGLES_DU_JEU.md).
 
 ## Jouer
 
@@ -72,7 +76,7 @@ La CI compile, teste, construit le JAR et génère la Javadoc sur Windows et Ubu
 
 Le sélecteur propose `sauvegardes/partie.save.json`. Ce dossier et les fichiers `*.save.json` sont ignorés par Git. Une confirmation précède tout remplacement de fichier ou abandon de partie. Un chargement échoué conserve la partie affichée.
 
-Le JSON version 1 stocke les statistiques, armes, potions, salle actuelle, visites, coffres, repos, PV et tours de chaque ennemi et issue de la partie. L'absence d'ennemi dans une salle est représentée explicitement par `null`. Les fichiers incohérents, inconnus ou supérieurs à 128 Kio sont refusés. La validation vise les invariants structurels et métier ; ce n'est pas un dispositif anti-triche prouvant l'historique complet de chaque action. Le journal n'est pas sauvegardé.
+Le JSON version 2 stocke aussi l’Élan, les effets, l’intention choisie, l’historique de l’IA, le hasard et les choix de salles. Les anciennes sauvegardes version 1 sont refusées proprement. Il stocke les statistiques, armes, potions, salle actuelle, visites, coffres, repos, PV et tours de chaque ennemi et issue de la partie. L'absence d'ennemi dans une salle est représentée explicitement par `null`. Les fichiers incohérents, inconnus ou supérieurs à 128 Kio sont refusés. La validation vise les invariants structurels et métier ; ce n'est pas un dispositif anti-triche prouvant l'historique complet de chaque action. Le journal n'est pas sauvegardé.
 
 L'écriture utilise un temporaire voisin puis un remplacement atomique si le système de fichiers le permet, avec remplacement standard en secours. Elle ne garantit pas la résistance à une coupure électrique sur tous les systèmes.
 

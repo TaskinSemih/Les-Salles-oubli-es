@@ -10,14 +10,16 @@ import static fr.utbm.sallesoubliees.modele.EtatSauvegarde.*;
 /** Conversion entre le modèle encapsulé et les données, avec validation avant publication. */
 public final class SauvegardePartie {
     /** Version actuellement acceptée. */
-    public static final int VERSION = 1;
+    public static final int VERSION = 2;
     /** Classe utilitaire. */
     private SauvegardePartie() { }
 
     /**
      * Capture la partie entre deux actions métier.
-     * @param partie partie à photographier
-     * @return instantané indépendant des mutations suivantes
+     *
+ * @param partie partie à photographier
+     *
+ * @return instantané indépendant des mutations suivantes
      */
     public static EtatSauvegarde capturer(Partie partie) {
         Heros h = partie.getHeros(); Inventaire i = h.getInventaire();
@@ -29,14 +31,17 @@ public final class SauvegardePartie {
             salles.add(new EtatSalle(salle.getId(), salle.estVisitee(), salle.estUtilisee(),
                     e == null ? null : new EtatEnnemi(e.getType(), e.getVie(), e.getTours())));
         }
-        return new EtatSauvegarde(VERSION, heros, partie.getSalleActuelle().getId(), partie.getEtat(), salles);
+        return new EtatSauvegarde(VERSION, heros, partie.getSalleActuelle().getId(), partie.getEtat(), salles, partie.getTactique().capturer());
     }
 
     /**
      * Reconstruit une nouvelle partie seulement si toutes les relations sont cohérentes.
-     * @param donnees instantané non fiable provenant d'un fichier
-     * @return nouvelle partie validée
-     * @throws IllegalArgumentException si une donnée ou relation est invalide
+     *
+ * @param donnees instantané non fiable provenant d'un fichier
+     *
+ * @return nouvelle partie validée
+     *
+ * @throws IllegalArgumentException si une donnée ou relation est invalide
      */
     public static Partie restaurer(EtatSauvegarde donnees) {
         verifier(donnees != null && donnees.version() == VERSION, "Version de sauvegarde incompatible.");
@@ -44,7 +49,15 @@ public final class SauvegardePartie {
         Heros heros = new Heros(); Donjon donjon = new Donjon();
         verifier(donnees.salles().size() == donjon.getSalles().size(), "Liste de salles incomplète.");
         Set<String> ids = new HashSet<>();
+        verifier(donnees.tactique() != null, "Tactique absente. Les sauvegardes version 1 ne sont plus compatibles.");
         int potionsDisponibles = 3;
+        for (var choix : donnees.tactique().choix().entrySet()) {
+            verifier(Set.of("arsenal", "bibliotheque", "tresor").contains(choix.getKey()), "Événement inconnu.");
+            verifier(donnees.salles().stream().anyMatch(s -> s.id().equals(choix.getKey()) && s.visitee()
+                    && (s.ennemi() == null || s.ennemi().vie() == 0)), "Événement inaccessible.");
+            potionsDisponibles += choix.getKey().equals("bibliotheque") || choix.getValue() == ChoixEvenement.IGNORER
+                    ? 0 : choix.getValue() == ChoixEvenement.RISQUER ? 2 : 1;
+        }
         Set<Arme> armesAttendues = EnumSet.of(Arme.ROUILLEE);
         for (EtatSalle sauvegardee : donnees.salles()) {
             verifier(sauvegardee != null && ids.add(sauvegardee.id()), "Salle absente ou dupliquée.");
@@ -83,7 +96,24 @@ public final class SauvegardePartie {
         verifier(donnees.etat() == attendu, "Issue incompatible avec les points de vie.");
         verifier(!bossMort || (!heros.estMort() && actuelle.getId().equals("boss")), "Victoire située hors du combat final.");
         verifier(!heros.estMort() || actuelle.estHostile(), "Défaite hors combat.");
-        return new Partie(heros, donjon, actuelle.getId(), donnees.etat());
+        Partie partie = new Partie(heros, donjon, actuelle.getId(), donnees.etat());
+        EtatTactique t = donnees.tactique();
+        verifier((t.decision() != null) == partie.estEnCombat(), "Intention incompatible avec le combat.");
+        verifier(partie.estEnCombat() || (t.elan() == 0 && t.historique().isEmpty() && t.effets().isEmpty()
+                && t.precedente() == null && !t.soinUtilise()), "États de combat hors combat.");
+        if (partie.estEnCombat()) {
+            Ennemi e = actuelle.getEnnemi();
+            verifier(!t.soinUtilise() || e.getType().equals("mage"), "Soin réservé au mage.");
+            verifier(DecisionAutorisee.verifier(e, t.decision()), "Décision ennemie incohérente.");
+            verifier(t.effets().stream().anyMatch(v -> v.type() == EffetCombat.Type.GARDE)
+                    == (t.decision().action() == ActionEnnemi.RIPOSTE), "Garde incompatible avec l'intention.");
+            verifier(t.effets().stream().allMatch(v -> v.cible() == EvenementJeu.Cible.HEROS
+                    ? Set.of(EffetCombat.Type.AFFAIBLI, EffetCombat.Type.MARQUE, EffetCombat.Type.LUCIDE).contains(v.type())
+                    : Set.of(EffetCombat.Type.ARMURE_RENFORCEE, EffetCombat.Type.VULNERABLE, EffetCombat.Type.GARDE).contains(v.type())),
+                    "Cible d'altération incohérente.");
+        }
+        partie.restaurerTactique(t);
+        return partie;
     }
 
     /** Vérifie que les visites sont accessibles depuis l'entrée sans traverser un ennemi vivant. */

@@ -1,5 +1,65 @@
 # Diagrammes de classes
 
+## Évolution tactique — version 2
+
+Ce diagramme complète les classes historiques ci-dessous. La vue consulte désormais `CombatTactique.intention()` ; les méthodes historiques de puissance/intention des ennemis restent disponibles pour les anciennes API, tandis que le jeu utilise les décisions structurées.
+
+```mermaid
+classDiagram
+    Partie *-- CombatTactique
+    CombatTactique --> SourceAleatoire
+    SourceAleatoire <|.. HasardReproductible
+    CombatTactique --> EtatTactique : capture
+    EtatSauvegarde --> EtatTactique
+    EtatTactique --> DecisionEnnemi
+    EtatTactique --> EffetCombat
+    CombatTactique ..> ContexteCombat
+    Ennemi ..> ContexteCombat : consulte
+    Ennemi ..> DecisionEnnemi : decider
+    Ennemi <|-- Squelette
+    Ennemi <|-- Golem
+    Ennemi <|-- Mage
+    Ennemi <|-- Boss
+    CombatTactique ..> EvenementJeu : produit
+    ResultatAction --> EvenementJeu
+    ControleurAnimation --> ResultatAction : lit
+    CombatTactique ..> EvenementSalle : propose
+    EvenementSalle --> ChoixEvenement
+    class SourceAleatoire {
+        <<interface>>
+        +prochainEntier(int borne) int
+        +etat() long
+    }
+    class CombatTactique {
+        -SourceAleatoire hasard
+        -int elan
+        -DecisionEnnemi decision
+        -List historique
+        -List effets
+        +capturer() EtatTactique
+        +intention() String
+    }
+    class Ennemi {
+        <<abstract>>
+        +decider(ContexteCombat, SourceAleatoire) DecisionEnnemi
+    }
+    class EffetCombat {
+        <<record>>
+        Type type
+        Cible cible
+        int duree
+    }
+    class DecisionEnnemi {
+        <<record>>
+        ActionEnnemi action
+        int puissance
+        boolean precise
+    }
+```
+
+La décision est tirée une fois avant le choix du joueur. Le contexte est une copie, les effets sont des valeurs immuables. La résolution produit les événements puis sélectionne l'intention suivante. Aucun hasard ni calcul de dégâts dans la vue. Les sauvegardes utilisent la version 2, la version 1 n'est pas migrée.
+
+
 Pour une présentation rapide devant un enseignant, commencer par le [schéma de conception POO simplifié](SCHEMA_CONCEPTION_POO.md). La présente page sert de référence technique détaillée.
 
 Ces diagrammes décrivent les classes du code Java. Pour rester lisibles, ils séparent le modèle de jeu, les données de sauvegarde et l'intégration Swing ; les classes répétées désignent les mêmes types. Les accesseurs et méthodes privées secondaires sont omis. `+` désigne une opération publique, `-` un attribut privé, `<|--` l'héritage, `*--` la composition et `..>` une dépendance d'utilisation.
@@ -180,7 +240,7 @@ classDiagram
     EvenementJeu --> Cible
 ```
 
-Le résultat décrit une action déjà entièrement résolue. Une commande invalide conserve le même état et produit zéro événement. `cible` désigne le personnage concerné par le fait : attaquant pour `ATTAQUE`, victime pour `DEGATS`. Ces données n'ont aucune dépendance à la durée ou aux coordonnées d'une animation et n'étendent pas le format JSON version 1.
+Le résultat décrit une action déjà entièrement résolue. Une commande invalide conserve le même état et produit zéro événement. `cible` désigne le personnage concerné par le fait : attaquant pour `ATTAQUE`, victime pour `DEGATS`. Ces données n'ont aucune dépendance à la durée ou aux coordonnées d'une animation et n'étendent pas le format JSON version 2.
 
 ## Instantané et persistance
 
@@ -190,7 +250,7 @@ Le résultat décrit une action déjà entièrement résolue. Une commande inval
 classDiagram
     direction LR
     class SauvegardePartie {
-        +int VERSION = 1$
+        +int VERSION = 2$
         +capturer(Partie partie) EtatSauvegarde$
         +restaurer(EtatSauvegarde donnees) Partie$
     }
@@ -397,4 +457,4 @@ classDiagram
 
 Le timer appartient uniquement à la scène et avance une horloge de présentation sur l'EDT. `ControleurAnimation` ne dépend pas de Swing et ne modifie jamais `Partie` : ses PV affichés progressent entre les instantanés avant/après déjà produits par le modèle. Les durées, poses et déplacements restent dans `vue`.
 
-Le modèle ne conserve que la salle courante. La position locale `(x, y)`, les collisions de décor et les trajets appartiennent à `SceneJeu`/`PlanSalle`, ne sont pas sauvegardés et ne changent pas les règles de déplacement entre salles. Un chargement replace le héros visuel à `(425, 370)` ; JSON reste en version 1.
+Le modèle ne conserve que la salle courante. La position locale `(x, y)`, les collisions de décor et les trajets appartiennent à `SceneJeu`/`PlanSalle`, ne sont pas sauvegardés et ne changent pas les règles de déplacement entre salles. Un chargement replace le héros visuel à `(425, 370)` ; JSON est en version 2.

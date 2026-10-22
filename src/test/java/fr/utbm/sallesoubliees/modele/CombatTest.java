@@ -21,7 +21,7 @@ class CombatTest {
     }
 
     @Test void defenseExpireApresUneReponse() {
-        Partie p = new Partie(); p.deplacer("ossuaire"); p.defendre();
+        Partie p = new Partie(new HasardReproductible(3)); p.deplacer("ossuaire"); p.defendre();
         assertEquals(99, p.getHeros().getVie());
         p.attaquer(); assertEquals(93, p.getHeros().getVie());
         assertEquals(2, p.getSalleActuelle().getEnnemi().getTours());
@@ -50,7 +50,7 @@ class CombatTest {
     }
 
     @Test void ennemiTueNeRipostePasEtNeDonneQuUneRecompense() {
-        Partie p = new Partie(); p.deplacer("ossuaire"); p.attaquer(); p.attaquer();
+        Partie p = new Partie(new HasardReproductible(3)); p.deplacer("ossuaire"); p.attaquer(); p.attaquer();
         int vie = p.getHeros().getVie(); p.attaquer();
         assertEquals(vie, p.getHeros().getVie());
         assertEquals(2, p.getSalleActuelle().getEnnemi().getTours());
@@ -62,7 +62,7 @@ class CombatTest {
     }
 
     @Test void potionSoigneAvecPlafondEtConsommeUnTourEnCombat() {
-        Partie p = new Partie(); p.deplacer("ossuaire"); p.attaquer();
+        Partie p = new Partie(new HasardReproductible(3)); p.deplacer("ossuaire"); p.attaquer();
         assertEquals(94, p.getHeros().getVie()); p.boirePotion();
         assertEquals(94, p.getHeros().getVie()); // 100 après le soin, puis 6 dégâts.
         assertEquals(2, p.getHeros().getInventaire().getPotions());
@@ -70,7 +70,7 @@ class CombatTest {
     }
 
     @Test void actionsInvalidesNeModifientRienEtNeConsommentPasDeTour() {
-        Partie p = new Partie(); p.deplacer("ossuaire");
+        Partie p = new Partie(new HasardReproductible(3)); p.deplacer("ossuaire");
         EtatSauvegarde avant = SauvegardePartie.capturer(p);
         assertThrows(IllegalStateException.class, p::boirePotion);
         assertThrows(IllegalStateException.class, () -> p.deplacer("entree"));
@@ -81,16 +81,16 @@ class CombatTest {
     }
 
     @Test void absenceDePotionNeDonnePasDeTourEnnemi() {
-        Partie p = new Partie(); p.deplacer("ossuaire"); p.attaquer();
-        while (p.getHeros().getInventaire().getPotions() > 0) p.boirePotion();
+        Partie p = new Partie(new HasardReproductible(3)); p.deplacer("ossuaire"); p.attaquer();
+        while (p.getHeros().getInventaire().getPotions() > 0) { p.getHeros().subirDegats(1); p.boirePotion(); }
         EtatSauvegarde avant = SauvegardePartie.capturer(p);
         assertThrows(IllegalStateException.class, p::boirePotion);
         assertEquals(avant, SauvegardePartie.capturer(p));
     }
 
     @Test void defaiteInterditToutesLesActionsEtAutresTours() {
-        Partie p = new Partie(); p.deplacer("ossuaire");
-        for (int i = 0; i < 100; i++) p.defendre();
+        Partie p = new Partie(new HasardReproductible(3)); p.deplacer("ossuaire");
+        while (p.estEnCours()) p.defendre();
         assertEquals(EtatPartie.DEFAITE, p.getEtat()); assertEquals(0, p.getHeros().getVie());
         EtatSauvegarde avant = SauvegardePartie.capturer(p);
         assertThrows(IllegalStateException.class, p::attaquer);

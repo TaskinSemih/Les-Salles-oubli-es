@@ -34,9 +34,12 @@ public final class GestionnaireSauvegarde {
 
     /**
      * Écrit un instantané validé, sans toucher au fichier cible avant la fin de l'écriture.
-     * @param fichier chemin choisi par le joueur
-     * @param etat instantané capturé sur le fil de l'interface
-     * @throws ExceptionSauvegarde si le fichier ne peut pas être enregistré
+     *
+ * @param fichier chemin choisi par le joueur
+     *
+ * @param etat instantané capturé sur le fil de l'interface
+     *
+ * @throws ExceptionSauvegarde si le fichier ne peut pas être enregistré
      */
     public void sauvegarder(Path fichier, EtatSauvegarde etat) throws ExceptionSauvegarde {
         Path temporaire = null;
@@ -62,9 +65,12 @@ public final class GestionnaireSauvegarde {
 
     /**
      * Charge et valide une partie neuve ; aucune partie existante n'est modifiée.
-     * @param fichier fichier JSON à lire
-     * @return partie entièrement validée
-     * @throws ExceptionSauvegarde si le fichier est absent, invalide ou incompatible
+     *
+ * @param fichier fichier JSON à lire
+     *
+ * @return partie entièrement validée
+     *
+ * @throws ExceptionSauvegarde si le fichier est absent, invalide ou incompatible
      */
     public Partie charger(Path fichier) throws ExceptionSauvegarde {
         try (var entree = Files.newInputStream(fichier)) {
@@ -72,7 +78,7 @@ public final class GestionnaireSauvegarde {
             if (contenu.length > TAILLE_MAX) throw new IOException("Fichier trop volumineux.");
             return SauvegardePartie.restaurer(mapper.readValue(contenu, EtatSauvegarde.class));
         } catch (IOException | RuntimeException e) {
-            throw new ExceptionSauvegarde("Chargement impossible : fichier absent, illisible, corrompu ou incompatible (version 1 requise).", e);
+            throw new ExceptionSauvegarde("Chargement impossible : fichier absent, illisible, corrompu ou incompatible (version 2 requise ; version 1 non prise en charge).", e);
         }
     }
 }

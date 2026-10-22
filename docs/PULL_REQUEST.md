@@ -1,15 +1,13 @@
-# Refonte visuelle RPG 2D des Salles oubliées
+# Combats tactiques et décisions ennemies reproductibles
 
-Branche : `feat/visual-rpg`. Base de revue : `feat/initial-game`, version fonctionnelle `22354d6`. Le dépôt ne possède pas de branche `main` ; cette PR compare la refonte à la version fonctionnelle sans créer ni fusionner de branche de base.
+Base : `feat/visual-rpg`. Branche : `feat/tactical-combat`.
 
-La scène remplace la présentation centrée sur les cases : héros animé dans quatre directions, neuf salles avec murs, sols, portes et décors propres, puis combats latéraux avec poses d'attaque, défense, soin, impacts, projectile du mage et rage du Gardien. Carte, inventaire, journal et pause deviennent des panneaux secondaires.
+Les combats proposent désormais Élan (0–3), frappe puissante et observation en complément des actions existantes. Les ennemis annoncent une décision choisie par leur stratégie : garde/riposte du squelette, préparation interruptible du golem, malédiction et soin unique du mage, trois phases et adaptation aux répétitions pour le Gardien. Altérations, coûts, réactions et phases apparaissent dans la scène et dans des événements structurés.
 
-Trois atlas originaux locaux sont inclus dans le JAR. Leur génération assistée, leurs prompts et leur découpe sont documentés. Le moteur produit des événements immuables et des instantanés avant/après ; la vue anime une copie sans rappeler les règles. Le JSON version 1 et les règles chiffrées sont conservés.
+La source aléatoire est injectable ; son état, l'intention, l'historique et les effets sont conservés dans le JSON version 2. Les sauvegardes version 1 sont refusées explicitement. Les découvertes de l'arsenal, de la bibliothèque et du trésor ajoutent des choix facultatifs et uniques avec des risques annoncés.
 
-## Validation
+Validation : 67 tests avec Swing, 200 parcours gagnants sur 100 graines, reprise JSON, fichiers invalides, double clic, pause et fermeture ; JAR et Javadoc stricte. Captures réelles inspectées, documentation et UML mis à jour.
 
-Tests métier, fichiers, événements, graphe visuel, parcours Swing jusqu'à la victoire, double clic, pause, trajet près d'un pilier, raccourcis et vrais dialogues de sauvegarde/reprise en combat. Packaging et Javadoc stricte vérifiés. Captures réelles examinées ; détails et limites dans [VALIDATION.md](VALIDATION.md).
+Limites : essais utilisateurs et équilibrage ressenti à poursuivre ; aucune garantie sur toutes les graines ou toutes les politiques de jeu ; bureau limité pour le vrai 1920×1080 et essais DPI à compléter. Le PNG de conception antérieur illustre le socle visuel ; le nouveau diagramme tactique est dans la documentation Mermaid.
 
-## Limites
-
-Version silencieuse. Essais physiques au clavier/Tab, diversité des DPI, grand écran réel 1920×1080, confirmations de remplacement et chargement avec perte de focus restent à compléter. La fenêtre de test grand écran a été limitée à 1297×817 par le bureau utilisé ; son nom de capture décrit la taille demandée. La durée de jeu reste à mesurer avec des joueurs. Aucune fusion automatique.
+Aucune fusion automatique.

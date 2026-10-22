@@ -109,7 +109,7 @@ class InterfaceTest {
             });
             SceneJeu scene = champ(f, "scene", SceneJeu.class);
             ControleurJeu c = champ(f, "controleur", ControleurJeu.class);
-            edt(() -> { scene.suspendre(false); capture(f, "02-exploration"); return null; });
+            edt(() -> { c.adopter(new Partie(new HasardReproductible(3))); scene.afficher(c.getPartie(), null); scene.suspendre(false); capture(f, "02-exploration"); return null; });
             aller(f, scene, c, "ossuaire");
             edt(() -> { capture(f, "03-squelette"); cliquer(f, "1 · Attaquer"); cliquer(f, "1 · Attaquer"); return null; });
             assertEquals(19, edt(() -> c.getPartie().getSalleActuelle().getEnnemi().getVie()));
@@ -122,6 +122,11 @@ class InterfaceTest {
             edt(() -> { scene.setReduite(true); return null; });
             vaincre(f, scene, c);
             aller(f, scene, c, "arsenal"); objet(scene); attendre(() -> c.getPartie().getSalleActuelle().estUtilisee());
+            edt(() -> {
+                cliquer(f, "F · Découverte"); capture(f, "tactique-evenement");
+                cliquer(f, "Prudent : +1 potion");
+                assertFalse(bouton(f, "F · Découverte").isEnabled()); scene.suspendre(false); return null;
+            });
             edt(() -> {
                 cliquer(f, "I · Inventaire");
                 List<JButton> choix = composants(f).stream().filter(v -> v instanceof JButton b && b.isShowing() && "Équiper".equals(b.getText()) && b.isEnabled()).map(v -> (JButton)v).toList();
@@ -195,10 +200,25 @@ class InterfaceTest {
             assertTrue(actions++ < 100);
             edt(() -> {
                 Partie p = c.getPartie(); Ennemi e = p.getSalleActuelle().getEnnemi();
-                String action = p.getHeros().getVie() <= 40 && p.peutBoire() ? "3 · Potion" : e instanceof Golem && e.puissanceProchaineAttaque() > 0 ? "2 · Défendre" : "1 · Attaquer";
+                ActionEnnemi d = p.getTactique().getDecision().action();
+                String action = p.getHeros().getVie() <= 45 && p.peutBoire() ? "3 · Potion"
+                        : d == ActionEnnemi.PREPARATION ? "1 · Attaquer"
+                        : d == ActionEnnemi.RIPOSTE && p.getTactique().getElan() < 2 ? "5 · Observer"
+                        : d == ActionEnnemi.FRAPPE_LOURDE || d == ActionEnnemi.ONDE ? "2 · Défendre"
+                        : p.getTactique().getElan() >= 2 ? "4 · Puissante (2 Élan)" : "1 · Attaquer";
+                capture(f, "tactique-" + e.getType() + "-intention");
+                assertEquals(p.getTactique().getElan() >= 2, bouton(f, "4 · Puissante (2 Élan)").isEnabled());
                 cliquer(f, action); return null;
             });
-            attendre(() -> !scene.estOccupe());
+            attendre(() -> {
+                try {
+                    ControleurAnimation a = champ(scene, "animation", ControleurAnimation.class);
+                    if (a.courant() != null && List.of(EvenementJeu.Type.INTERRUPTION, EvenementJeu.Type.CONTRE_ATTAQUE,
+                            EvenementJeu.Type.EFFET, EvenementJeu.Type.PHASE, EvenementJeu.Type.ELAN, EvenementJeu.Type.BRISE_GARDE).contains(a.courant().type()))
+                        capture(f, "tactique-animation-" + a.courant().type().name());
+                } catch (Exception ex) { throw new AssertionError(ex); }
+                return !scene.estOccupe();
+            });
         }
         assertNotEquals(EtatPartie.DEFAITE, edt(() -> c.getPartie().getEtat()));
     }

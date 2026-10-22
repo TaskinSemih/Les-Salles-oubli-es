@@ -1,5 +1,24 @@
 # Architecture
 
+## Moteur tactique et sauvegarde version 2
+
+`Partie` compose désormais `CombatTactique`, qui conserve Élan, décision sélectionnée, trois actions récentes, dernière réponse, effets et choix de salles. `Partie.resoudre` valide d'abord la commande puis délègue la résolution et détermine l'issue. Le service tactique applique l'action, vieillit les effets, joue au plus une réponse et choisit la prochaine décision si les deux personnages survivent.
+
+`Ennemi.decider(ContexteCombat, SourceAleatoire)` est polymorphe : chaque adversaire définit ses priorités et seuils. Le contexte copie l'historique. La décision immuable contient action, puissance et précision. La vue affiche cette décision ; un changement de phase ne modifie jamais rétroactivement une attaque annoncée.
+
+`SourceAleatoire` est injectée et son état est capturé. `HasardReproductible` utilise un état sur 48 bits ; le chargement reconstruit exactement cet état. Les tirages portent sur les décisions et pièges, jamais sur les dégâts. Les tests fixent une graine ; la production en utilise une variable.
+
+`EffetCombat` représente un type, une cible et une durée. Les collections sont copiées. Les événements d'application, expiration, interruption, riposte, protection brisée, Élan et phase sont lus par `ControleurAnimation`. Le lecteur possède ses propres PV, stock, Élan et effets, puis rejoint exactement l'instantané final.
+
+`EtatSauvegarde` inclut `EtatTactique`. La restauration valide les bornes, types d'actions permis à l'ennemi, effets/cibles, absence de tactique hors combat et accessibilité des événements résolus. Le JSON version 1 est refusé explicitement. Les confirmations et I/O restent dans la fenêtre et ses SwingWorker.
+
+F / Découverte ouvre uniquement les choix proposés par `Partie.getEvenementSalle`. Arsenal et trésor donnent des ressources ; la bibliothèque soigne avec une rune. Les conséquences sont résolues par le modèle et enregistrées une seule fois.
+
+## Socle conservé
+
+Les paragraphes suivants décrivent le socle. Les règles chiffrées actuelles et leur ordre d'expiration sont définis dans [REGLES_DU_JEU.md](REGLES_DU_JEU.md).
+
+
 Java 21, Maven Wrapper, Swing, JUnit 5 et Jackson. Le package racine est `fr.utbm.sallesoubliees`. Les relations entre classes sont détaillées dans [UML.md](UML.md).
 
 ## Responsabilités
@@ -36,7 +55,7 @@ Une commande d'attaque, de défense ou de potion appelle le contrôleur, qui dé
 
 L'appel retourne un `ResultatAction` immuable : validité, message, instantanés `avant` et `apres`, liste copiée des `EvenementJeu`. Chaque événement contient un type, un personnage concerné, une valeur réelle et ses PV après le fait. Attaque, défense, soin, dégâts, préparation, rage, mort, récompense et issue finale sont des faits métier, sans sprite, durée ou coordonnées. Pour `ATTAQUE`, le personnage concerné est l'attaquant ; pour `DEGATS`, il est celui qui subit les dégâts. Une commande refusée fournit les mêmes états avant/après et une liste vide. Les anciennes méthodes textuelles `attaquer`, `defendre` et `boirePotion` restent des adaptateurs qui lèvent une exception si la commande est refusée.
 
-La défense est un paramètre de la réponse ennemie, valable pour cet appel seulement. Aucun drapeau de défense métier ne reste actif entre deux commandes. Le combat est déduit de l'état global et de la présence d'un ennemi vivant dans la salle actuelle ; il n'existe pas d'objet combat indépendant à sérialiser.
+La défense est un paramètre de la réponse ennemie, valable pour cet appel seulement. Aucun drapeau de défense métier ne reste actif entre deux commandes. Le combat est déduit de l'état global et de la présence d'un ennemi vivant dans la salle actuelle ; les données temporaires du combat sont conservées dans CombatTactique et capturées dans EtatTactique.
 
 `ControleurAnimation` commence sur l'instantané avant et déroule les faits dans leur ordre. Il conserve ses propres PV affichés, quantité de potions, défense et rage visuelles, puis rejoint exactement l'instantané après. Il ne possède aucune commande de jeu : accélérer ou terminer immédiatement une animation ne provoque ni attaque supplémentaire ni nouvelle récompense. La partie réelle se trouve déjà dans l'état final pendant la présentation. Les nouvelles commandes sont bloquées jusqu'au point stable de présentation.
 
@@ -60,7 +79,7 @@ Un unique `javax.swing.Timer` dans `SceneJeu` fait progresser marche, présentat
 
 La carte, les récompenses et les statistiques fixes viennent du catalogue Java. Le JSON décrit leur état variable et les statistiques attendues du héros, dont la conformité est contrôlée. Le compteur de réponses des ennemis préserve notamment l'alternance du golem. Le journal est informatif et n'est pas enregistré. La défense ayant expiré avant chaque capture, aucun état temporaire supplémentaire n'est nécessaire.
 
-La refonte visuelle conserve le **format JSON version 1**. Les événements, l'animation en cours, les trajets et la position interne du héros ne sont pas sauvegardés. Lors d'un chargement, la salle métier est restaurée et le héros visuel revient au point praticable `(425, 370)` dans son repère local. Lors d'un changement de salle normal, son placement peut au contraire tenir compte de la porte de provenance. Les sauvegardes décrivent toujours un état métier stable, jamais une frame intermédiaire.
+La refonte visuelle utilise le **format JSON version 2**. Les événements, l'animation en cours, les trajets et la position interne du héros ne sont pas sauvegardés. Lors d'un chargement, la salle métier est restaurée et le héros visuel revient au point praticable `(425, 370)` dans son repère local. Lors d'un changement de salle normal, son placement peut au contraire tenir compte de la porte de provenance. Les sauvegardes décrivent toujours un état métier stable, jamais une frame intermédiaire.
 
 ## Fichiers et interface asynchrone
 

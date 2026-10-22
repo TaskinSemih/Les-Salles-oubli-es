@@ -51,3 +51,12 @@ Pour la refonte, montrer d'abord le héros dans une salle et la marche ZQSD, pui
 - Comment ajouter un ennemi sans recopier le moteur de combat ? Quels fichiers et documents devraient être mis à jour ?
 
 Chaque étudiant doit pouvoir relier ses réponses au code livré et distinguer sa contribution effective de celle des autres membres ou des outils d'assistance.
+## Approfondissement technique : combats tactiques
+
+Montrer la source aléatoire injectée et deux reprises d'une même sauvegarde : les décisions futures sont identiques. Expliquer que la variété en production n'empêche pas les tests reproductibles.
+
+Comparer les quatre implémentations de `Ennemi.decider` : règles prioritaires, seuils pondérés et historique borné. Il s'agit d'une IA simple et explicable, sans apprentissage automatique.
+
+Montrer une action avec Élan, une interruption et une riposte. `Partie` valide, `CombatTactique` résout et produit des faits, `ControleurAnimation` lit seulement des copies. La séquence ne rappelle jamais les dégâts.
+
+La sauvegarde version 2 conserve intention, générateur, effets et historique. Les anciennes sauvegardes sont refusées explicitement. Présenter les 200 parcours sur graines fixes comme une preuve limitée à cette politique et à ces graines, puis distinguer les essais utilisateurs encore nécessaires.

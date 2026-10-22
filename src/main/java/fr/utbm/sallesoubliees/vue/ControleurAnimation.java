@@ -10,6 +10,12 @@ public final class ControleurAnimation {
     private int vieHeros;
     private int vieEnnemi;
     private int potions;
+    private int elan;
+    private java.util.List<EffetCombat> effets = new java.util.ArrayList<>();
+    /** {@return Élan de présentation} */
+    public int getElan() { return elan; }
+    /** {@return altérations de présentation} */
+    public java.util.List<EffetCombat> getEffets() { return java.util.List.copyOf(effets); }
     private boolean defense;
     private boolean rage;
     private boolean reduite;
@@ -20,20 +26,23 @@ public final class ControleurAnimation {
     public ControleurAnimation() { }
     /**
      * Prépare la copie visuelle de l'état avant sans modifier la partie réelle.
-     * @param resolution action déjà résolue
+     *
+ * @param resolution action déjà résolue
      */
     public void demarrer(ResultatAction resolution) {
         if (estActive()) throw new IllegalStateException("Une séquence est déjà active.");
         if (!resolution.valide() || resolution.evenements().isEmpty()) throw new IllegalArgumentException("Séquence vide.");
         resultat = resolution; index = 0; temps = 0; defense = false; mortHeros = false; mortEnnemi = false;
         vieHeros = resolution.avant().heros().vie(); potions = resolution.avant().heros().potions();
+        elan = resolution.avant().tactique().elan(); effets = new java.util.ArrayList<>(resolution.avant().tactique().effets());
         var ennemi = resolution.avant().salles().stream().filter(s -> s.id().equals(resolution.avant().salleActuelle())).findFirst().orElseThrow().ennemi();
         vieEnnemi = ennemi == null ? 0 : ennemi.vie(); rage = ennemi != null && ennemi.type().equals("boss") && ennemi.vie() <= 45;
         appliquer();
     }
     /**
      * Avance l'horloge de présentation ; accepte un grand pas sans perdre de fait.
-     * @param millisecondes temps écoulé positif
+     *
+ * @param millisecondes temps écoulé positif
      */
     public void avancer(double millisecondes) {
         if (millisecondes < 0) throw new IllegalArgumentException("Temps négatif.");
@@ -49,9 +58,16 @@ public final class ControleurAnimation {
         switch (e.type()) {
             case DEGATS, SOIN -> {
                 if (e.cible() == EvenementJeu.Cible.HEROS) vieHeros = e.vieApres(); else vieEnnemi = e.vieApres();
-                if (e.type() == EvenementJeu.Type.SOIN) potions--;
+                if (e.type() == EvenementJeu.Type.SOIN && e.cible() == EvenementJeu.Cible.HEROS) potions--;
             }
             case DEFENSE -> defense = true;
+            case ELAN -> elan = e.valeur();
+            case EFFET -> {
+                var type = EffetCombat.Type.values()[e.valeur()];
+                effets.removeIf(v -> v.type() == type && v.cible() == e.cible());
+                effets.add(new EffetCombat(type, e.cible(), 1));
+            }
+            case EXPIRATION -> effets.removeIf(v -> v.type().ordinal() == e.valeur() && v.cible() == e.cible());
             case RAGE -> rage = true;
             case RECOMPENSE -> potions += e.valeur();
             case MORT -> { if (e.cible() == EvenementJeu.Cible.HEROS) mortHeros = true; else mortEnnemi = true; }
@@ -61,6 +77,7 @@ public final class ControleurAnimation {
     /** Aligne exactement les dernières valeurs et expire la défense. */
     private void terminer() {
         vieHeros = resultat.apres().heros().vie(); potions = resultat.apres().heros().potions(); defense = false;
+        elan = resultat.apres().tactique().elan(); effets = new java.util.ArrayList<>(resultat.apres().tactique().effets());
         var ennemi = resultat.apres().salles().stream().filter(s -> s.id().equals(resultat.apres().salleActuelle())).findFirst().orElseThrow().ennemi();
         vieEnnemi = ennemi == null ? 0 : ennemi.vie();
     }
@@ -88,7 +105,8 @@ public final class ControleurAnimation {
     public boolean estMortEnnemi() { return mortEnnemi; }
     /**
      * Réduit les déplacements et la durée des séquences.
-     * @param valeur option d'accessibilité
+     *
+ * @param valeur option d'accessibilité
      */
     public void setReduite(boolean valeur) { reduite = valeur; }
     /** {@return option d'animations réduites} */

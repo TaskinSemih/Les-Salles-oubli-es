@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ExplorationTest {
     @Test void deplacementsSuiventLesPassagesEtCollectionsProtegees() {
-        Partie p = new Partie();
+        Partie p = new Partie(new HasardReproductible(3));
         assertEquals(9, p.getDonjon().getSalles().size());
         assertThrows(IllegalStateException.class, () -> p.deplacer("boss"));
         assertThrows(IllegalStateException.class, () -> p.deplacer("inconnue"));
@@ -64,14 +64,14 @@ class ExplorationTest {
     }
 
     @Test void nouvellePartieNePartageAucunEtat() {
-        Partie a = versArsenal(); a.ouvrirCoffre(); Partie b = new Partie();
+        Partie a = versArsenal(); a.ouvrirCoffre(); Partie b = new Partie(new HasardReproductible(3));
         assertEquals(100, b.getHeros().getVie()); assertEquals(3, b.getHeros().getInventaire().getPotions());
         assertFalse(b.getDonjon().getSalle("arsenal").estUtilisee());
         assertFalse(b.getDonjon().getSalle("ossuaire").getEnnemi().estMort());
     }
 
     private static Partie versArsenal() {
-        Partie p = new Partie(); p.deplacer("ossuaire"); gagnerCombat(p); p.deplacer("arsenal"); return p;
+        Partie p = new Partie(new HasardReproductible(3)); p.deplacer("ossuaire"); gagnerCombat(p); p.deplacer("arsenal"); return p;
     }
 
     private static void gagnerCombat(Partie p) {

@@ -84,3 +84,13 @@ Les captures `01-accueil` à `07-defaite`, `salle-*` et `resolution-*` sont prod
 | Date / système / JDK / commit | Scénarios exécutés | Observations | Statut et anomalies |
 | --- | --- | --- | --- |
 | À renseigner | À renseigner | À renseigner | Non exécuté |
+## Évolution tactique
+
+- Vérifier le coût 2 Élan de Puissante et son refus sans mutation, le gain plafonné à 3 et la remise à zéro après combat.
+- Attaquer une garde puis Observer une garde : comparer la riposte à l'ouverture obtenue. Briser une armure avec Puissante.
+- Interrompre le golem avec Rapide ; laisser une préparation passer puis défendre contre la lourde. Vérifier récupération et vulnérabilité.
+- Observer le mage, subir puis laisser expirer AFFAIBLI, constater qu'il ne se soigne qu'une fois.
+- Répéter trois actions face au Gardien ; comparer ses choix et traverser les seuils 45 et 22 PV. La puissance annoncée reste stable pendant le tour.
+- Ouvrir F dans les trois salles, lire les risques, choisir, revenir : aucun second bonus. Tester toutes les options, dont la rune à pleine vie.
+- Sauvegarder avec Élan, effets et intention ; recharger et comparer les prochaines actions et tirages. Charger une ancienne version 1 doit échouer sans remplacer la partie.
+- Vérifier les boutons sur deux lignes à 900×620 et la lisibilité des intentions, tooltips et messages d'effets.

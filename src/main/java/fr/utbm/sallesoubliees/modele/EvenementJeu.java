@@ -2,9 +2,13 @@ package fr.utbm.sallesoubliees.modele;
 
 /**
  * Fait métier immuable, sans durée, sprite ni coordonnées.
+ *
  * @param type nature du fait
+ *
  * @param cible personnage concerné
+ *
  * @param valeur dégâts réellement subis, soin réel ou récompense
+ *
  * @param vieApres PV du personnage après ce fait
  */
 public record EvenementJeu(Type type, Cible cible, int valeur, int vieApres) {
@@ -19,7 +23,16 @@ public record EvenementJeu(Type type, Cible cible, int valeur, int vieApres) {
         /** Mort d'un personnage. */ MORT,
         /** Potion gagnée. */ RECOMPENSE,
         /** Fin victorieuse. */ VICTOIRE,
-        /** Fin par mort du héros. */ DEFAITE
+        /** Fin par mort du héros. */ DEFAITE,
+        /** Nouvelle réserve d'élan. */ ELAN,
+        /** Application d'une altération, valeur = ordinal du type. */ EFFET,
+        /** Expiration d'une altération. */ EXPIRATION,
+        /** Préparation annulée. */ INTERRUPTION,
+        /** Protection brisée. */ BRISE_GARDE,
+        /** Riposte déclenchée. */ CONTRE_ATTAQUE,
+        /** Information révélée. */ OBSERVATION,
+        /** Intention suivante sélectionnée. */ INTENTION,
+        /** Phase du Gardien. */ PHASE
     }
     /** Identité du personnage concerné, indépendante de la présentation. */
     public enum Cible {

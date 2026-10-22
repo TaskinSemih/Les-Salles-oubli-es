@@ -34,6 +34,9 @@ public final class FenetreJeu extends JFrame {
     private final JButton defense = Theme.bouton("2 · Défendre");
     private final JButton potion = Theme.bouton("3 · Potion");
     private final JButton interaction = Theme.bouton("E · Interagir");
+    private final JButton puissante = Theme.bouton("4 · Puissante (2 Élan)");
+    private final JButton observer = Theme.bouton("5 · Observer");
+    private final JButton choixSalle = Theme.bouton("F · Découverte");
     private final JButton inventaire = Theme.bouton("I · Inventaire");
     private final JButton carte = Theme.bouton("M · Carte");
     private final JButton journalBouton = Theme.bouton("J · Journal");
@@ -46,7 +49,8 @@ public final class FenetreJeu extends JFrame {
     public FenetreJeu() { this(new GestionnaireRessources()); }
     /**
      * Construit l'interface avec un cache préparé par le lanceur.
-     * @param ressources images chargées avant l'ouverture de la fenêtre
+     *
+ * @param ressources images chargées avant l'ouverture de la fenêtre
      */
     public FenetreJeu(GestionnaireRessources ressources) {
         super("Les Salles oubliées · Le serment du Gardien");
@@ -61,8 +65,8 @@ public final class FenetreJeu extends JFrame {
         for (JButton b : new JButton[]{inventaire, carte, journalBouton, pause}) outils.add(b);
         entete.add(outils, BorderLayout.EAST);
         commandes.setLayout(new BorderLayout(8, 5)); commandes.setBorder(BorderFactory.createEmptyBorder(7, 18, 10, 18));
-        JPanel actions = Theme.panneau(); actions.setLayout(new GridLayout(1, 4, 9, 0));
-        for (JButton b : new JButton[]{attaque, defense, potion, interaction}) actions.add(b);
+        JPanel actions = Theme.panneau(); actions.setLayout(new GridLayout(2, 4, 9, 4));
+        for (JButton b : new JButton[]{attaque, defense, potion, interaction, puissante, observer, choixSalle}) actions.add(b);
         commandes.add(intention, BorderLayout.NORTH); commandes.add(actions, BorderLayout.CENTER);
         evenement.setFont(Theme.CORPS.deriveFont(12f)); evenement.setForeground(Theme.SECONDAIRE); commandes.add(evenement, BorderLayout.SOUTH);
         racine.add(entete, BorderLayout.NORTH); racine.add(couches, BorderLayout.CENTER); racine.add(commandes, BorderLayout.SOUTH);
@@ -75,6 +79,12 @@ public final class FenetreJeu extends JFrame {
         attaque.setToolTipText("Attaque de l'arme équipée. L'ennemi survivant répond une seule fois.");
         defense.setToolTipText("+8 d'armure pour la seule réponse ennemie qui suit.");
         potion.setToolTipText("Rend jusqu'à 35 PV ; consomme une réponse en combat.");
+        attaque.setToolTipText("Attaque rapide : +1 Élan ; interrompt les préparations fragiles.");
+        puissante.setToolTipText("+10 puissance, coûte 2 Élan, brise la garde et l'armure renforcée. Attention aux ripostes.");
+        observer.setToolTipText("Révèle deux intentions et évite la riposte en créant une ouverture. Consomme un tour.");
+        puissante.addActionListener(e -> actionCombat(ActionCombat.PUISSANTE));
+        observer.addActionListener(e -> actionCombat(ActionCombat.OBSERVER));
+        choixSalle.addActionListener(e -> ouvrirEvenement());
         interaction.setToolTipText("Approchez une porte, un coffre ou le sanctuaire. E ou Entrée.");
         attaque.addActionListener(e -> actionCombat(ActionCombat.ATTAQUER)); defense.addActionListener(e -> actionCombat(ActionCombat.DEFENDRE));
         potion.addActionListener(e -> actionCombat(ActionCombat.POTION)); interaction.addActionListener(e -> scene.interagir());
@@ -99,6 +109,9 @@ public final class FenetreJeu extends JFrame {
             case "attaque" -> actionCombat(ActionCombat.ATTAQUER);
             case "defense" -> actionCombat(ActionCombat.DEFENDRE);
             case "potion" -> actionCombat(ActionCombat.POTION);
+            case "puissante" -> actionCombat(ActionCombat.PUISSANTE);
+            case "observer" -> actionCombat(ActionCombat.OBSERVER);
+            case "decouverte" -> ouvrirEvenement();
             case "inventaire" -> ouvrirInventaire();
             case "carte" -> ouvrirCarte();
             case "journal" -> ouvrirJournal();
@@ -116,6 +129,21 @@ public final class FenetreJeu extends JFrame {
     }
     /** {@return possibilité de lancer une nouvelle commande de jeu} */
     private boolean libre() { return controleur.getPartie() != null && panneauOuvert == null && !fichierEnCours && !scene.estOccupe(); }
+    /** Présente uniquement les options de l'événement proposé par le modèle. */
+    private void ouvrirEvenement() {
+        if (!libre()) return;
+        EvenementSalle e = controleur.getPartie().getEvenementSalle(); if (e == null) return;
+        JPanel corps = colonne();
+        JTextArea texte = new JTextArea(e.description()); texte.setEditable(false); texte.setLineWrap(true); texte.setWrapStyleWord(true);
+        texte.setRows(3); texte.setColumns(40); texte.setFont(Theme.CORPS); corps.add(texte);
+        texte.setBackground(Theme.PANNEAU); texte.setForeground(Theme.TEXTE);
+        for (ChoixEvenement c : e.choix()) corps.add(bouton(switch (c) {
+            case PRUDENT -> e.salle().equals("bibliotheque") ? "Rune stable : +15 PV" : "Prudent : +1 potion";
+            case RISQUER -> e.salle().equals("bibliotheque") ? "Rune interdite : +35 PV, brûlure 40 %" : "Risquer : +2 potions, piège 40 %";
+            case IGNORER -> "Ignorer définitivement";
+        }, () -> { fermerPanneau(); executerSimple(() -> controleur.getPartie().choisirEvenement(c)); }));
+        montrer("evenement", e.titre(), corps);
+    }
     /** Emprunte seulement un passage réel après la marche visuelle. */
     private void deplacer(String id) {
         if (!libre()) return;
@@ -142,6 +170,9 @@ public final class FenetreJeu extends JFrame {
         boolean libre = existe && panneauOuvert == null && !fichierEnCours && !scene.estOccupe();
         attaque.setEnabled(libre && p.estEnCombat() && scene.estCombatAffiche());
         defense.setEnabled(attaque.isEnabled()); potion.setEnabled(libre && p.peutBoire());
+        puissante.setEnabled(attaque.isEnabled() && p.getTactique().getElan() >= 2);
+        observer.setEnabled(attaque.isEnabled());
+        choixSalle.setEnabled(libre && p.getEvenementSalle() != null);
         interaction.setEnabled(libre && p.estEnCours() && !p.estEnCombat());
         inventaire.setEnabled(existe && panneauOuvert == null && !fichierEnCours && !scene.estOccupe());
         carte.setEnabled(existe && panneauOuvert == null && !fichierEnCours && !scene.estOccupe());
@@ -152,7 +183,7 @@ public final class FenetreJeu extends JFrame {
             if (fichierEnCours) intention.setText("Opération de fichier en cours…");
             else if (scene.estOccupe()) intention.setText("L'action se déroule…");
             else if (!p.estEnCours()) intention.setText(p.getEtat() == EtatPartie.VICTOIRE ? "Victoire · Les salles sont libérées." : "Défaite · Votre voyage peut recommencer.");
-            else if (p.estEnCombat()) intention.setText("À VOUS  ·  " + p.getSalleActuelle().getEnnemi().getIntention());
+            else if (p.estEnCombat()) intention.setText("À VOUS  ·  " + p.getTactique().intention());
             else intention.setText("Flèches / ZQSD : marcher   ·   E / Entrée : interagir   ·   Cliquez une porte pour la rejoindre");
             intention.setToolTipText(intention.getText());
         }

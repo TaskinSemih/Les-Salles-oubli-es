@@ -1,46 +1,54 @@
-# Règles du jeu — version 1
+# Règles du jeu — version 2 tactique
 
-Toutes les valeurs sont déterministes. L'objectif de 10 à 15 minutes reste à mesurer avec des joueurs.
+Le héros commence à 100 PV, attaque 12, armure 3, trois potions (+35 PV plafonnés) et une épée rouillée. Acier : +5 attaque ; runique : +9. Les PV sont bornés et les actions invalides ne consomment ni tour ni hasard.
 
-## Personnages et combat
+| Action | Coût et effet |
+| --- | --- |
+| 1 Attaquer (rapide) | Dégâts max(1, attaque − armure), +1 Élan ; interrompt une préparation fragile. |
+| 2 Défendre | +8 armure pour cette réponse seulement (+4 contre une onde). +1 Élan si la protection réduit effectivement l'impact. |
+| 3 Potion | Consomme une potion, soin réel jusqu'à +35 ; réponse ennemie en combat. |
+| 4 Puissante | Coûte 2 Élan, +10 puissance ; ignore l'armure temporaire et la garde. Une riposte reste dangereuse si l'ennemi survit. |
+| 5 Observer | Consomme le tour ; LUCIDE pendant les deux intentions suivantes. N'attaque pas une garde, donc évite sa riposte et crée une ouverture. |
 
-Le héros commence avec 100/100 PV, 12 d'attaque de base, 3 d'armure, une épée rouillée (+0) et 3 potions (+35 PV chacune). Les PV sont toujours compris entre zéro et le maximum.
+Élan : 0 à 3, remis à zéro à chaque entrée et fin de combat. Une action valide est résolue entièrement une fois avant son animation. Un ennemi tué ne répond pas et ne reçoit pas de nouvelle décision.
 
-| Ennemi | PV | Attaque | Armure | Comportement |
-| --- | ---: | ---: | ---: | --- |
-| Squelette | 30 | 9 | 1 | Attaque normale chaque tour. |
-| Golem | 48 | 14 | 4 | Prépare son coup aux tours impairs, frappe à puissance 22 aux tours pairs. |
-| Mage | 36 | 11 | 1 | Ignore l'armure de base du héros, mais pas la défense temporaire. |
-| Gardien (boss) | 90 | 16 | 3 | Puissance 24 à partir de 45 PV restants. |
+## Identités ennemies et choix
 
-Les dégâts sont `max(1, puissance - armure effective)`. Une attaque emploie l'attaque de base plus le bonus de l'arme équipée. Défendre ajoute 8 d'armure pour la seule réponse ennemie qui suit, puis expire, même si le golem prépare son coup. L'intention du prochain tour ennemi est visible.
+PV / attaque de base / armure : squelette 30/9/1, golem 48/14/4, mage 36/11/1, Gardien 90/16/3.
 
-Chaque action valide en combat (attaquer, défendre, boire une potion) est suivie exactement d'un tour ennemi, sauf si l'ennemi vient de mourir. Boire à pleine vie ou sans potion est invalide. Aucun effet ni tour ennemi pour une action invalide. Les potions soignent au plus jusqu'au maximum et disparaissent après utilisation. Hors combat, boire ne provoque aucune attaque.
+- **Squelette** : les deux premières réponses sont des attaques 9 pour apprendre. Ensuite 40 % de garde/riposte et 60 % d'attaque ; après une garde, attaque obligatoire. Sa garde ajoute 6 armure ; riposte uniquement si le héros attaque. Une riposte évitée ouvre une vulnérabilité.
+- **Golem** : 55 % préparation fragile, 25 % armure renforcée, 20 % onde 16. Préparation laissée intacte → frappe 22 ; rapide → interruption et vulnérabilité. Après frappe lourde/onde : récupération obligatoire.
+- **Mage** : projectile 11 ignorant l'armure permanente, malédiction, armure ou soin unique (+10 sous 15 PV). Après une capacité défensive, de soin ou de malédiction, projectile obligatoire. Malédiction : 25 % habituellement, 60 % si Élan ≥2 ou deux potions dans les trois actions récentes ; les autres poids résultent des seuils 75/100. Une intention d'attaque/malédiction est vague sauf avec LUCIDE.
+- **Gardien** : phase 1 >45 PV, phase 2 de 23 à 45, phase 3 ≤22. Frappe normale : 15/18/21 ; riposte : 16/18/20 ; onde (phases 2/3) : 20/23 ; frappe lourde préparée : 26 (phases 1/2), 30 en phase finale. Tirage : attaque 35 %, préparation 20 %, garde 20 %, marque (phase 1) ou onde 25 %. Trois mêmes commandes récentes portent la probabilité de riposte à 65 %. Pas deux ripostes consécutives ; récupération après frappe lourde ou onde.
 
-Chaque ennemi ordinaire vaincu donne une potion, une seule fois. Le boss ne donne pas de récompense : sa mort termine immédiatement la partie par une victoire. À zéro PV du héros, la défaite termine immédiatement la partie. Aucune action métier n'est autorisée ensuite ; sauvegarde, chargement et nouvelle partie restent possibles.
+L'ennemi choisit **avant** l'action du héros. Une décision annoncée conserve sa puissance même si le coup du joueur fait franchir un seuil ; la nouvelle phase influence les décisions suivantes. Le héros peut donc faire confiance à l'intention annoncée.
 
-## Carte et exploration
+## Altérations
 
-Neuf salles fixes, passages bidirectionnels (aucune diagonale implicite) :
+- GARDE : liée à l'intention de riposte, +6 armure.
+- ARMURE_RENFORCEE : +6 armure pendant deux attaques/actions du héros, brisée par Puissante.
+- VULNERABLE : prochain coup du héros +6 puissance, consommé au coup ou expiré après une action.
+- AFFAIBLI : attaque du héros −4 pendant deux actions.
+- LUCIDE : intentions exactes pendant deux choix ; Observer le rafraîchit.
+- MARQUE : prochain impact ennemi +4 puissance ; expire après trois actions sans impact.
 
-```text
-Entrée (entree) — Ossuaire (ossuaire) — Arsenal (arsenal)
-                      |                    |
-                 Forge (forge) — Sanctuaire (repos) — Bibliothèque (bibliotheque)
-                                                        |
-                    Trésor (tresor) — Antichambre (antichambre) — Gardien (boss)
-```
+Les effets anciens vieillissent après l'action du héros, avant l'application des nouveaux effets de la réponse ennemie. Les effets ne se cumulent pas avec eux-mêmes. Une frappe puissante brise la protection mais n'annule pas une riposte. Toutes les ressources et altérations temporaires sont effacées à la fin du combat.
 
-Passages exacts : entree–ossuaire, ossuaire–arsenal, ossuaire–forge, arsenal–repos, forge–repos, repos–bibliotheque, bibliotheque–antichambre, antichambre–tresor, antichambre–boss.
+## Exploration et choix
 
-L'ossuaire contient un squelette, la forge un golem, la bibliothèque un mage et l'antichambre un golem. Entrer dans une salle avec un ennemi vivant démarre le combat ; impossible d'en sortir avant sa mort. Revisiter une salle ne ressuscite rien. Seules les salles reliées à la salle actuelle sont accessibles. La carte entière et les passages sont visibles.
+Les neuf salles et leurs neuf passages restent identiques : entrée–ossuaire, ossuaire–arsenal, ossuaire–forge, arsenal–repos, forge–repos, repos–bibliothèque, bibliothèque–antichambre, antichambre–trésor, antichambre–Gardien. Une entrée hostile impose le combat ; marcher dans une salle ne consomme aucun tour. Un ennemi ordinaire vaincu donne une potion une seule fois ; le Gardien mort termine la partie.
 
-L'arsenal donne une épée d'acier (+5) et deux potions ; le trésor donne une lame runique (+9) et une potion. Chaque coffre nécessite l'action Ouvrir et ne fonctionne qu'une fois. Les armes restent dans l'inventaire ; équiper remplace le bonus, sans cumul. Changer d'arme est réservé à l'exploration ; équiper une arme déjà équipée est invalide. Le sanctuaire restaure tous les PV une seule fois, sur demande et uniquement si le héros est blessé.
+L'arsenal donne acier et deux potions, le trésor donne runique et une potion. Coffres et repos complet sont utilisables une seule fois ; le repos n'est pas consommé à pleine vie. Changement d'arme hors combat uniquement.
 
-Parcours conseillé à vérifier par test : entrée → ossuaire (vaincre) → arsenal (ouvrir, équiper acier) → repos (garder le soin si possible) → bibliothèque (vaincre) → antichambre (alterner attaque lors des préparations et défense avant les frappes) → trésor (ouvrir, équiper runique) → antichambre → boss. Les détours vers la forge et le repos sont possibles. Boire avant d'être en danger ; la potion en combat donne aussi un tour à l'ennemi.
+F / Découverte propose des choix facultatifs, résolus une seule fois, indépendamment du coffre :
+- Arsenal et trésor : +1 potion sûre, +2 potions avec 40 % de piège, ou ignorer définitivement.
+- Bibliothèque après le mage : rune stable +15 PV, rune interdite +35 PV avec 40 % de brûlure après le soin, ou ignorer.
+- Piège/brûlure : perte d'au plus 12 PV, laisse toujours au moins 1 PV. Les soins sont plafonnés à 100. L'option risquée consomme un tirage ; les autres aucun.
 
-## Sauvegarde
+## Hasard, sauvegarde et limites
 
-La refonte 2D ne change pas ces règles. Marcher dans une salle ne consomme aucun tour. Une entrée hostile impose une courte présentation puis le combat, sans possibilité de contourner l'ennemi. La vue lit les événements d'une action déjà résolue et bloque les nouvelles commandes jusqu'à la fin de sa présentation. La position visuelle est réinitialisée à un point sûr au chargement ; elle ne fait pas partie du JSON.
+Le générateur sur 48 bits est injectable et sauvegardé. La production utilise une graine initiale variable ; les tests utilisent des graines fixes et des situations contrôlées. Les dégâts ne varient pas au hasard. La même sauvegarde et les mêmes commandes produisent les mêmes décisions futures.
 
-La version 1 du JSON décrit les statistiques, l'inventaire, l'équipement, la salle actuelle, chaque salle et son ennemi (PV et nombre de tours ennemis déjà joués), les visites, coffres, repos et l'état global. Les actions et réponses ennemies sont atomiques : une sauvegarde intervient entre deux actions, lorsque la défense temporaire a expiré. Aucun état transitoire de défense n'est donc à enregistrer. Le journal est informatif et n'est pas conservé.
+Le JSON **version 2** conserve statistiques, inventaire, état des salles, Élan, intention sélectionnée, trois commandes récentes, dernière réponse, soin ennemi utilisé, effets et choix résolus. Les versions 1 sont refusées avec un message français : aucune migration silencieuse. Chargement validé avant publication, fichiers uniquement entre deux séquences. Position graphique et journal non sauvegardés ; reprise au point sûr (425, 370).
+
+L'équilibrage automatique vérifie 200 parcours tactiques (100 graines, route directe et neuf salles). Cela prouve ces parcours et cette politique de jeu, sans garantir toutes les graines ni une durée de 10–15 minutes. Des essais avec joueurs restent nécessaires.

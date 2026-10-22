@@ -1,3 +1,22 @@
+# Validation tactique — 22 octobre 2026
+
+Branche `feat/tactical-combat`, issue de la version visuelle `46e7b37`. Les validations antérieures ci-dessous restent historiques.
+
+- Tests métier/fichiers existants conservés ; les fixtures utilisent une graine fixe et les attentes modifiées correspondent aux nouvelles règles. Les cas invalides et refus sans mutation restent vérifiés.
+- 16 tests tactiques supplémentaires couvrent reproductibilité/variété, Élan et coûts, garde/riposte, observation, interruption, malédiction/expiration, mage et boss contextuels, onde/marque, reprise JSON, lecteur d'animation, événements uniques, piège/succès, rune et erreurs d'état.
+- 200 parcours gagnants : 100 graines, route directe et route des neuf salles. La politique lit les intentions, interrompt, défend, observe, utilise les potions et dépense l'Élan. Cette preuve ne vaut pas pour toutes les graines ou décisions possibles.
+- Parcours Swing jusqu'à la victoire : boutons des nouvelles actions, disponibilités selon l'Élan, découverte et choix, double clic, pause, vraie sauvegarde/reprise en combat et fermeture pendant une séquence.
+- Captures réelles : `tactique-evenement`, `tactique-*-intention`, `tactique-animation-*`, victoire et tailles demandées. Inspection de l'interruption, phase 3, altération du mage, choix de salle, riposte, Élan et taille minimale. Fenêtres de test hors du bureau visible ; ce pilotage ne remplace pas les essais physiques au clavier.
+- Commande : `mvnw.cmd --batch-mode verify javadoc:javadoc -Dtests.interface=true`. Dernière validation complète : 67 tests, zéro échec et zéro erreur ; JAR et Javadoc stricte réussis.
+- JAR lancé puis fenêtre « Les Salles oubliées · Le serment du Gardien » détectée. L'instance de contrôle a été fermée après vérification, sans toucher aux autres processus Java.
+- JSON version 2 : bornes d'Élan/hasard, événements inaccessibles ou inconnus, état absent et historique hors combat refusés, en complément des erreurs de fichiers existantes. Reprise conserve les prochaines décisions et les effets.
+- Les événements de salle partagent un moteur simple de choix ; la bibliothèque restaure des PV, arsenal/trésor donnent des potions. Les risques ne rendent jamais le piège mortel. Les choix n'empêchent pas d'ouvrir les coffres.
+- Les sauvegardes version 1 ne sont pas migrées. Les textes historiques expliquant leur compatibilité ne concernent pas cette version.
+
+Restent les essais joueurs, les tests physiques de toutes les touches et configurations DPI, un vrai bureau 1920×1080, et les combinaisons de perte de focus/confirmations déjà listées dans la checklist. La CI distante doit être consultée pour le commit publié ; aucune réussite de la version initiale n'est attribuée au nouveau code.
+
+---
+
 # Validation de la refonte — 7 octobre 2026
 
 Branche `feat/visual-rpg`, issue de la version fonctionnelle `22354d6`. Java 21, Maven Wrapper et Swing sous Windows. Le compte rendu initial plus bas est historique et ne vaut pas validation de la refonte.

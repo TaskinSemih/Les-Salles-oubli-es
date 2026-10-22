@@ -10,10 +10,10 @@ final class RenduCombat {
     RenduCombat(GestionnaireRessources ressources) { this.ressources = ressources; }
 
     /** Dessine un instant de combat à partir des seuls faits et valeurs de présentation. */
-    void dessiner(Graphics2D g, String type, ControleurAnimation animation, boolean rageStable, boolean herosMort, boolean ennemiMort) {
+    void dessiner(Graphics2D g, String type, ControleurAnimation animation, boolean rageStable, boolean herosMort, boolean ennemiMort, boolean garde) {
         EvenementJeu e = animation.courant(); double p = animation.progression();
         boolean heros = e != null && e.cible() == EvenementJeu.Cible.HEROS;
-        int poseH = herosMort ? 5 : animation.estDefense() ? 4 : 0, poseE = ennemiMort ? 5 : 0;
+        int poseH = herosMort ? 5 : animation.estDefense() ? 4 : 0, poseE = ennemiMort ? 5 : garde ? 4 : 0;
         double xH = 285, xE = 695, yH = 446, yE = 446;
         float alphaH = herosMort ? .2f : 1, alphaE = ennemiMort ? 0 : 1;
         if (e != null) {
@@ -25,7 +25,10 @@ final class RenduCombat {
                 case DEGATS -> { if (heros) { poseH = 5; xH -= Math.sin(p * Math.PI) * 12; } else { poseE = 5; xE += Math.sin(p * Math.PI) * 12; } }
                 case PREPARATION, RAGE -> poseE = 4;
                 case DEFENSE -> poseH = 4;
-                case SOIN -> poseH = 4;
+                case SOIN -> { if (heros) poseH = 4; else poseE = 4; }
+                case CONTRE_ATTAQUE -> poseE = 3;
+                case EFFET, OBSERVATION, ELAN -> { if (heros) poseH = 4; else poseE = 4; }
+                case INTERRUPTION, BRISE_GARDE -> poseE = 5;
                 case MORT -> { if (heros) { poseH = 5; alphaH = (float)(1 - p * .8); yH += p * 12; } else { poseE = 5; alphaE = (float)(1 - p); yE += p * 15; } }
                 default -> { }
             }
@@ -54,6 +57,23 @@ final class RenduCombat {
     /** Effets courts qui complètent les poses plutôt que de remplacer les dessins. */
     private void effets(Graphics2D g, EvenementJeu e, double p, double xH, double xE, String type) {
         double cible = e.cible() == EvenementJeu.Cible.HEROS ? xH : xE;
+        if (e.type() == EvenementJeu.Type.EFFET || e.type() == EvenementJeu.Type.INTERRUPTION
+                || e.type() == EvenementJeu.Type.BRISE_GARDE || e.type() == EvenementJeu.Type.ELAN
+                || e.type() == EvenementJeu.Type.OBSERVATION || e.type() == EvenementJeu.Type.PHASE
+                || e.type() == EvenementJeu.Type.CONTRE_ATTAQUE) {
+            String message = switch (e.type()) {
+                case EFFET -> fr.utbm.sallesoubliees.modele.EffetCombat.Type.values()[e.valeur()].name().replace('_', ' ');
+                case ELAN -> "ÉLAN " + e.valeur() + "/3";
+                case PHASE -> "PHASE " + e.valeur();
+                case BRISE_GARDE -> "GARDE BRISÉE";
+                case CONTRE_ATTAQUE -> "RIPOSTE";
+                case OBSERVATION -> "INTENTION RÉVÉLÉE";
+                default -> "INTERROMPU";
+            };
+            RenduSalle.lueur(g, cible, 350, 90, new Color(130, 206, 240), (float)(.35 * (1 - p)));
+            g.setColor(new Color(239, 203, 126)); g.setFont(Theme.CORPS.deriveFont(Font.BOLD, 18));
+            g.drawString(message, (int)cible - g.getFontMetrics().stringWidth(message) / 2, 260 - (int)(p * 20));
+        }
         if (e.type() == EvenementJeu.Type.ATTAQUE && e.cible() == EvenementJeu.Cible.ENNEMI && type.equals("mage")) {
             double x = xE - (xE - xH) * p;
             RenduSalle.lueur(g, x, 332, 45, new Color(97, 240, 211), .7f);

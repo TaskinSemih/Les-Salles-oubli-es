@@ -46,9 +46,12 @@ public final class SceneJeu extends JPanel {
 
     /**
      * Crée la scène sans charger d'image pendant ses frames.
-     * @param ressources atlas déjà en mémoire
-     * @param commande commandes vers la fenêtre
-     * @param changement demande de rafraîchissement des contrôles
+     *
+ * @param ressources atlas déjà en mémoire
+     *
+ * @param commande commandes vers la fenêtre
+     *
+ * @param changement demande de rafraîchissement des contrôles
      */
     public SceneJeu(GestionnaireRessources ressources, Consumer<String> commande, Runnable changement) {
         this.ressources = ressources; this.commande = commande; this.changement = changement;
@@ -72,8 +75,10 @@ public final class SceneJeu extends JPanel {
 
     /**
      * Entre dans la salle réelle ; au chargement le héros revient au point central praticable.
-     * @param nouvelle partie courante
-     * @param provenance identifiant de la salle précédente, null au chargement
+     *
+ * @param nouvelle partie courante
+     *
+ * @param provenance identifiant de la salle précédente, null au chargement
      */
     public void afficher(Partie nouvelle, String provenance) {
         arreter(); partie = nouvelle; accueil = false; id = nouvelle.getSalleActuelle().getId(); plan = PlanSalle.de(id);
@@ -90,8 +95,10 @@ public final class SceneJeu extends JPanel {
     public void accueil() { arreter(); partie = null; accueil = true; id = "entree"; plan = PlanSalle.de(id); fondExploration = renduSalle.fond(id, false); repaint(); }
     /**
      * Lit une action atomique déjà appliquée au modèle.
-     * @param resultat événements ordonnés
-     * @param fin notification unique de fin
+     *
+ * @param resultat événements ordonnés
+     *
+ * @param fin notification unique de fin
      */
     public void jouer(ResultatAction resultat, Runnable fin) {
         if (estOccupe()) throw new IllegalStateException("La scène est occupée.");
@@ -108,12 +115,14 @@ public final class SceneJeu extends JPanel {
     public boolean estReduite() { return animation.estReduite(); }
     /**
      * Change uniquement la vitesse de présentation.
-     * @param valeur option utilisateur
+     *
+ * @param valeur option utilisateur
      */
     public void setReduite(boolean valeur) { animation.setReduite(valeur); }
     /**
      * Gèle mouvements et horloge lorsqu'un panneau ou un dialogue masque la scène.
-     * @param valeur panneau ouvert ou fenêtre inactive
+     *
+ * @param valeur panneau ouvert ou fenêtre inactive
      */
     public void suspendre(boolean valeur) { suspendue = valeur; touches.clear(); if (valeur) timer.stop(); else if (estOccupe()) demarrerTimer(); }
     /** Arrête tous les travaux visuels, en laissant intacte la résolution métier déjà terminée. */
@@ -129,7 +138,8 @@ public final class SceneJeu extends JPanel {
     }
     /**
      * Déclenche une marche vers une porte réellement adjacente.
-     * @param salle destination demandée depuis la carte
+     *
+ * @param salle destination demandée depuis la carte
      */
     public void marcherVersPorte(String salle) {
         if (partie == null || estOccupe() || suspendue || !partie.peutDeplacer(salle)) return;
@@ -258,6 +268,7 @@ public final class SceneJeu extends JPanel {
         lier(KeyEvent.VK_E, "interaction"); lier(KeyEvent.VK_ENTER, "interaction");
         lier(KeyEvent.VK_I, "inventaire"); lier(KeyEvent.VK_M, "carte"); lier(KeyEvent.VK_J, "journal");
         lier(KeyEvent.VK_ESCAPE, "pause"); lier(KeyEvent.VK_1, "attaque"); lier(KeyEvent.VK_2, "defense"); lier(KeyEvent.VK_3, "potion");
+        lier(KeyEvent.VK_4, "puissante"); lier(KeyEvent.VK_5, "observer"); lier(KeyEvent.VK_F, "decouverte");
     }
     /** Associe un raccourci à une intention de commande. */
     private void lier(int code, String action) {
@@ -283,7 +294,8 @@ public final class SceneJeu extends JPanel {
             Ennemi ennemi = partie.getSalleActuelle().getEnnemi();
             renduCombat.dessiner(g, ennemi == null ? "boss" : ennemi.getType(), animation,
                     ennemi instanceof Boss && !ennemi.estMort() && ennemi.getVie() <= 45, !partie.estEnCours() && partie.getHeros().estMort() && !animation.estActive(),
-                    ennemi != null && ennemi.estMort() && !animation.estActive());
+                    ennemi != null && ennemi.estMort() && !animation.estActive(),
+                    !animation.estActive() && partie.getTactique().getDecision() != null && partie.getTactique().getDecision().action() == ActionEnnemi.RIPOSTE);
         } else {
             for (PlanSalle.Porte porte : plan.portes()) renduSalle.porte(g, porte, porte.destination().equals(survol), partie.getDonjon().getSalle(porte.destination()).getNom());
             renduSalle.objets(g, plan, partie.getSalleActuelle().estUtilisee(), id, y, false);
@@ -318,6 +330,16 @@ public final class SceneJeu extends JPanel {
         g.setFont(Theme.CORPS.deriveFont(Font.BOLD, 14)); g.setColor(Theme.TEXTE); g.drawString("L'EXPLORATEUR", 105, 44);
         barre(g, 105, 55, 145, vie, 100, Theme.VERT);
         g.setFont(Theme.CORPS.deriveFont(12f)); g.setColor(Theme.TEXTE); g.drawString(vie + " / 100 PV   ·   " + potions + " potions", 104, 90);
+        if (partie.estEnCombat() || animation.estActive()) {
+            g.setColor(new Color(15, 18, 31, 232)); g.fillRoundRect(25, 120, 380, 68, 8, 8);
+            g.setColor(Theme.OR); g.setFont(Theme.CORPS.deriveFont(13f));
+            g.drawString("ÉLAN  " + (animation.estActive() ? animation.getElan() : partie.getTactique().getElan()) + " / 3   ·   4 : Puissante   5 : Observer", 36, 141);
+            var effets = animation.estActive() ? animation.getEffets() : partie.getTactique().getEffets();
+            g.setFont(Theme.CORPS.deriveFont(11f)); g.setColor(Theme.TEXTE);
+            String etats = effets.isEmpty() ? "Aucune altération" : effets.stream().map(e -> e.cible() + " : " + e.type() + " (" + e.duree() + ")").collect(java.util.stream.Collectors.joining("  /  "));
+            while (g.getFontMetrics().stringWidth(etats) > 355 && etats.length() > 4) etats = etats.substring(0, etats.length() - 4) + "…";
+            g.drawString(etats, 36, 166);
+        }
         if (combat && partie.getSalleActuelle().getEnnemi() != null) {
             Ennemi ennemi = partie.getSalleActuelle().getEnnemi(); int pv = animation.estActive() ? animation.getVieEnnemi() : ennemi.getVie();
             g.setColor(new Color(15, 18, 31, 232)); g.fillRoundRect(608, 18, 325, 100, 12, 12);
